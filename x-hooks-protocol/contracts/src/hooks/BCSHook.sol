@@ -61,7 +61,8 @@ contract BCSHook is BaseHook {
         address partyB; // seller — pays token0, receives token1
         uint256 amount0;
         uint256 amount1;
-        uint160 triggerPrice; // sqrtPriceX96
+        uint160 triggerPrice; // sqrtPriceX96 at which the deal settles
+        uint160 priceAtRegistration; // pool sqrtPriceX96 captured on register
         uint256 expiryBlock;
         PoolId poolId;
         Currency token0;
@@ -91,7 +92,7 @@ contract BCSHook is BaseHook {
             afterSwap: false,
             beforeDonate: false,
             afterDonate: false,
-            beforeSwapReturnDelta: true,
+            beforeSwapReturnDelta: false,
             afterSwapReturnDelta: false,
             afterAddLiquidityReturnDelta: false,
             afterRemoveLiquidityReturnDelta: false
@@ -122,6 +123,7 @@ contract BCSHook is BaseHook {
         c.triggerPrice = triggerPrice;
         c.expiryBlock = expiryBlock;
         c.poolId = key.toId();
+        (c.priceAtRegistration,,,) = poolManager.getSlot0(key.toId());
         c.token0 = key.currency0;
         c.token1 = key.currency1;
 
@@ -189,6 +191,9 @@ contract BCSHook is BaseHook {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         PoolId poolId = key.toId();
+        // Read the ACTUAL current pool price (via StateLibrary.getSlot0) —
+        // the swap's sqrtPriceLimitX96 is the worst-acceptable price, not the
+        // current one.
         (uint160 currentSqrtPriceX96,,,) = poolManager.getSlot0(poolId);
 
         uint256[] storage ids = activeByPool[poolId];
@@ -207,9 +212,14 @@ contract BCSHook is BaseHook {
             }
             if (c.status != Status.Active) continue;
 
-            // Settle if the trigger price is crossed in this direction.
-            bool crossed = _trigger(currentSqrtPriceX96, params.sqrtPriceLimitX96, c.triggerPrice, params.zeroForOne);
-            if (crossed) {
+            // Fire if either (a) the pool's current price has already crossed
+            // the trigger relative to where it was at registration, or (b)
+            // this in-flight swap's limit indicates the swap will cross the
+            // trigger as it executes.
+            if (
+                _alreadyCrossed(c.priceAtRegistration, currentSqrtPriceX96, c.triggerPrice)
+                    || _willCross(currentSqrtPriceX96, params.sqrtPriceLimitX96, c.triggerPrice, params.zeroForOne)
+            ) {
                 _settle(c, id);
                 _removeAt(ids, i);
             }
@@ -218,16 +228,22 @@ contract BCSHook is BaseHook {
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
-    function _trigger(uint160 current, uint160 limit, uint160 trigger, bool zeroForOne)
+    function _alreadyCrossed(uint160 priceAtReg, uint160 currentPrice, uint160 trigger) internal pure returns (bool) {
+        if (priceAtReg <= trigger && currentPrice >= trigger) return true;
+        if (priceAtReg >= trigger && currentPrice <= trigger) return true;
+        return false;
+    }
+
+    function _willCross(uint160 current, uint160 limit, uint160 trigger, bool zeroForOne)
         internal
         pure
         returns (bool)
     {
         if (zeroForOne) {
-            // price moves down: triggered if limit <= trigger <= current.
+            // Price moves down: this swap can reach as low as `limit`.
             return current >= trigger && trigger >= limit;
         } else {
-            // price moves up: triggered if current <= trigger <= limit.
+            // Price moves up: this swap can reach as high as `limit`.
             return current <= trigger && trigger <= limit;
         }
     }

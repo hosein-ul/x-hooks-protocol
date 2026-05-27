@@ -6,24 +6,24 @@ import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
+import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary, toBeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {SafeCast} from "@uniswap/v4-core/src/libraries/SafeCast.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title OFAHook — Orderflow Auction Hook
-/// @notice Large swaps are routed into a short on-chain auction. Solvers bid
-/// to fill the order at a better price than the AMM. Best bid wins; if no
-/// bids arrive within the window the swap falls back to the AMM.
-///
-/// The hook exposes `requestAuctionSwap` as the user-facing entry point.
-/// `beforeSwap` enforces the threshold rule when traders go through the
-/// normal PoolManager swap path: small swaps pass through, large swaps revert
-/// (forcing them into the auction flow).
+/// @title OFAHook — Orderflow Auction Hook (V4 Native AsyncSwap Pattern)
+/// @notice Transparently intercepts large swaps via beforeSwap. The hook
+/// mints ERC-6909 claims inside PoolManager to custody the user's input
+/// during the auction window. Solvers compete to fill at a better price.
+/// If no bids arrive the AMM executes as fallback. Normal small swaps pass
+/// through untouched — users interact with the standard swap router.
 contract OFAHook is BaseHook {
     using SafeERC20 for IERC20;
+    using CurrencyLibrary for Currency;
+    using SafeCast for uint256;
 
     // ---------------------------------------------------------------------
     // Errors
@@ -35,8 +35,8 @@ contract OFAHook is BaseHook {
     error BidBelowFloor();
     error BidNotBetter();
     error DuplicateBidder();
-    error MustUseAuction();
     error InvalidAmount();
+    error OnlyPoolManager();
 
     // ---------------------------------------------------------------------
     // Events
@@ -94,9 +94,6 @@ contract OFAHook is BaseHook {
     mapping(uint256 => Bid[]) public auctionBids;
     mapping(uint256 => mapping(address => bool)) public hasBid;
 
-    /// @dev Re-entrant flag for the AMM fallback path.
-    bool internal _inFallback;
-
     constructor(IPoolManager _manager, uint256 _threshold, uint256 _durationBlocks) BaseHook(_manager) {
         auctionThreshold = _threshold;
         auctionDurationBlocks = _durationBlocks;
@@ -125,72 +122,64 @@ contract OFAHook is BaseHook {
     }
 
     // ---------------------------------------------------------------------
-    // beforeSwap — gating: large swaps via PM are blocked, small swaps pass
+    // beforeSwap — transparently intercept large swaps via normal router
     // ---------------------------------------------------------------------
-    function _beforeSwap(address, PoolKey calldata, SwapParams calldata params, bytes calldata)
+    /// @dev hookData encodes the actual swapper address: abi.encode(address user).
+    /// When empty, `sender` (the router) is used as the user.
+    function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         internal
-        view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        if (_inFallback) {
-            return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
-        }
+        // Only exactIn swaps qualify (amountSpecified < 0).
         if (params.amountSpecified >= 0) {
             return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
         uint256 amountIn = uint256(-params.amountSpecified);
-        if (amountIn >= auctionThreshold) {
-            revert MustUseAuction();
+        if (amountIn < auctionThreshold) {
+            return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
-        return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
-    }
 
-    // ---------------------------------------------------------------------
-    // User entry point: create an auction
-    // ---------------------------------------------------------------------
-    /// @notice Submit a large swap into the auction system.
-    /// @dev Caller must have approved this contract for `amountIn` of tokenIn.
-    function requestAuctionSwap(
-        PoolKey calldata key,
-        bool zeroForOne,
-        uint256 amountIn,
-        uint160 sqrtPriceLimitX96
-    ) external returns (uint256 auctionId) {
-        if (amountIn < auctionThreshold) revert InvalidAmount();
+        Currency tokenIn = params.zeroForOne ? key.currency0 : key.currency1;
+        Currency tokenOut = params.zeroForOne ? key.currency1 : key.currency0;
 
-        (Currency tokenIn, Currency tokenOut) =
-            zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
+        // Mint ERC-6909 claim inside PoolManager to hold user's input.
+        // The hook incurs a -amountIn delta which is cleared by the hookDelta
+        // returned below. The locker (swap router) still settles amountIn of
+        // tokenIn in the same unlock, delivering the tokens to PM.
+        poolManager.mint(address(this), tokenIn.toId(), amountIn);
 
-        IERC20(Currency.unwrap(tokenIn)).safeTransferFrom(msg.sender, address(this), amountIn);
-
+        address user = hookData.length >= 32 ? abi.decode(hookData, (address)) : sender;
         uint256 ammFloor = _quoteAmmFloor(amountIn);
-        auctionId = nextAuctionId++;
+        uint256 id = nextAuctionId++;
 
-        PendingAuction storage a = auctions[auctionId];
+        PendingAuction storage a = auctions[id];
         a.status = AuctionStatus.Open;
-        a.user = msg.sender;
+        a.user = user;
         a.poolId = key.toId();
-        a.zeroForOne = zeroForOne;
+        a.zeroForOne = params.zeroForOne;
         a.amountIn = amountIn;
         a.ammFloor = ammFloor;
         a.endBlock = block.number + auctionDurationBlocks;
         a.tokenIn = tokenIn;
         a.tokenOut = tokenOut;
         a.key = key;
-        a.sqrtPriceLimitX96 = sqrtPriceLimitX96;
+        a.sqrtPriceLimitX96 = params.sqrtPriceLimitX96;
 
-        emit AuctionCreated(auctionId, msg.sender, key.toId(), amountIn, ammFloor, a.endBlock);
+        emit AuctionCreated(id, user, key.toId(), amountIn, ammFloor, a.endBlock);
+
+        // Return delta: hook consumed amountIn of specified currency (input),
+        // no AMM execution for this amount.
+        return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(int128(uint128(amountIn)), 0), 0);
     }
 
-    /// @dev Conservative AMM floor: 99% of input (assumes ~1:1 with 1% slippage).
-    /// Production deployments should plug in a real quoter.
+    /// @dev Conservative AMM floor: 99% of input (~1% slippage assumption).
     function _quoteAmmFloor(uint256 amountIn) internal pure returns (uint256) {
         return (amountIn * 99) / 100;
     }
 
     // ---------------------------------------------------------------------
-    // Solver bidding
+    // Solver bidding (unchanged — off-chain competition)
     // ---------------------------------------------------------------------
     function submitBid(uint256 auctionId, uint256 amountOut) external {
         PendingAuction storage a = auctions[auctionId];
@@ -209,7 +198,7 @@ contract OFAHook is BaseHook {
     }
 
     // ---------------------------------------------------------------------
-    // Settlement
+    // Settlement — operates inside a PM unlock to redeem ERC-6909 claims
     // ---------------------------------------------------------------------
     function settleAuction(uint256 auctionId) external {
         PendingAuction storage a = auctions[auctionId];
@@ -219,61 +208,52 @@ contract OFAHook is BaseHook {
         a.status = AuctionStatus.Settled;
 
         if (a.bestSolver != address(0)) {
+            // Solver path:
+            // 1. Solver transfers output to user (ERC-20 direct, outside PM).
+            // 2. Hook gives solver the input from its ERC-6909 holdings.
             IERC20(Currency.unwrap(a.tokenOut)).safeTransferFrom(a.bestSolver, a.user, a.bestAmountOut);
-            IERC20(Currency.unwrap(a.tokenIn)).safeTransfer(a.bestSolver, a.amountIn);
+            poolManager.unlock(abi.encode(auctionId, false));
             emit AuctionSettledBySolver(auctionId, a.bestSolver, a.bestAmountOut);
         } else {
-            uint256 amountOut = _executeAmmFallback(a);
+            // AMM fallback: redeem ERC-6909, swap via AMM, deliver output to user.
+            poolManager.unlock(abi.encode(auctionId, true));
+        }
+    }
+
+    /// @notice PM unlock callback — handles both solver input release and AMM fallback.
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        if (msg.sender != address(poolManager)) revert OnlyPoolManager();
+
+        (uint256 auctionId, bool isAmmFallback) = abi.decode(data, (uint256, bool));
+        PendingAuction storage a = auctions[auctionId];
+
+        // Burn ERC-6909: gives hook a positive delta (credit) for tokenIn.
+        poolManager.burn(address(this), a.tokenIn.toId(), a.amountIn);
+
+        if (!isAmmFallback) {
+            // Transfer input to winning solver by taking from PM.
+            poolManager.take(a.tokenIn, a.bestSolver, a.amountIn);
+        } else {
+            // AMM fallback: swap via PM (beforeSwap short-circuits for self-calls).
+            SwapParams memory sp = SwapParams({
+                zeroForOne: a.zeroForOne,
+                amountSpecified: -int256(a.amountIn),
+                sqrtPriceLimitX96: a.sqrtPriceLimitX96
+            });
+            BalanceDelta delta = poolManager.swap(a.key, sp, "");
+
+            // Take the AMM output and deliver to the original swapper.
+            uint256 amountOut;
+            if (delta.amount0() > 0) {
+                amountOut = uint128(delta.amount0());
+                poolManager.take(a.key.currency0, a.user, amountOut);
+            } else if (delta.amount1() > 0) {
+                amountOut = uint128(delta.amount1());
+                poolManager.take(a.key.currency1, a.user, amountOut);
+            }
             emit AuctionSettledByAMM(auctionId, amountOut);
         }
-    }
-
-    function _executeAmmFallback(PendingAuction storage a) internal returns (uint256 amountOut) {
-        _inFallback = true;
-        bytes memory result = poolManager.unlock(
-            abi.encode(a.key, a.zeroForOne, a.amountIn, a.sqrtPriceLimitX96, a.user, a.tokenIn, a.tokenOut)
-        );
-        _inFallback = false;
-        amountOut = abi.decode(result, (uint256));
-    }
-
-    function unlockCallback(bytes calldata data) external returns (bytes memory) {
-        require(msg.sender == address(poolManager), "OFAHook: not PoolManager");
-        (
-            PoolKey memory key,
-            bool zeroForOne,
-            uint256 amountIn,
-            uint160 sqrtPriceLimitX96,
-            address user,
-            Currency tokenIn,
-            Currency tokenOut
-        ) = abi.decode(data, (PoolKey, bool, uint256, uint160, address, Currency, Currency));
-
-        SwapParams memory sp = SwapParams({
-            zeroForOne: zeroForOne,
-            amountSpecified: -int256(amountIn),
-            sqrtPriceLimitX96: sqrtPriceLimitX96
-        });
-        BalanceDelta delta = poolManager.swap(key, sp, "");
-
-        int128 dIn = zeroForOne ? delta.amount0() : delta.amount1();
-        int128 dOut = zeroForOne ? delta.amount1() : delta.amount0();
-
-        // Settle input we owe PoolManager (we already custody amountIn).
-        if (dIn < 0) {
-            uint256 owed = uint256(int256(-dIn));
-            poolManager.sync(tokenIn);
-            IERC20(Currency.unwrap(tokenIn)).safeTransfer(address(poolManager), owed);
-            poolManager.settle();
-        }
-        // Take output and forward to user.
-        uint256 amountOut = 0;
-        if (dOut > 0) {
-            amountOut = uint256(int256(dOut));
-            poolManager.take(tokenOut, user, amountOut);
-        }
-
-        return abi.encode(amountOut);
+        return "";
     }
 
     // ---------------------------------------------------------------------

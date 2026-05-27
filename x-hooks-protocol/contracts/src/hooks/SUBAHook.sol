@@ -6,21 +6,17 @@ import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
+import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary, toBeforeSwapDelta} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title SUBAHook — Sealed-Bid Uniform-price Batch Auction Hook
-/// @notice All swaps within an epoch are buffered. At epoch end the keeper
-/// computes a single clearing price that maximizes matched volume; every
-/// participant trades at that one price. No order-of-arrival advantage.
-///
-/// Users submit orders by calling `submitOrder` directly. `beforeSwap` blocks
-/// direct PoolManager swaps so users cannot bypass the batch.
+/// @title SUBAHook — Sealed-Bid Uniform-price Batch Auction Hook (V4 AsyncSwap)
+/// @notice Every swap through the pool is transparently buffered into the
+/// current epoch via the V4 AsyncSwap pattern (mint ERC-6909 + beforeSwap
+/// delta). The keeper settles all orders at a single uniform clearing price.
+/// Users interact with the standard router — there is no separate entry point.
 contract SUBAHook is BaseHook {
-    using SafeERC20 for IERC20;
+    using CurrencyLibrary for Currency;
 
     // ---------------------------------------------------------------------
     // Errors
@@ -30,16 +26,13 @@ contract SUBAHook is BaseHook {
     error EpochNotEnded();
     error EpochAlreadySettled();
     error EpochNotFound();
-    error PoolNotInitialized();
-    error MustUseBatch();
-    error InvalidOrder();
-    error UnknownPool();
+    error OnlyPoolManager();
 
     // ---------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------
     event EpochStarted(PoolId indexed poolId, uint256 indexed epochId, uint256 endBlock);
-    event OrderSubmitted(
+    event OrderBuffered(
         PoolId indexed poolId, uint256 indexed epochId, address indexed user, bool zeroForOne, uint256 amountIn
     );
     event EpochSettled(
@@ -60,8 +53,8 @@ contract SUBAHook is BaseHook {
     struct Epoch {
         uint256 endBlock;
         bool settled;
-        uint256 totalBuyVolume; // zeroForOne (selling token0 for token1)
-        uint256 totalSellVolume; // !zeroForOne (selling token1 for token0)
+        uint256 totalBuyVolume; // zeroForOne — token0 in
+        uint256 totalSellVolume; // !zeroForOne — token1 in
     }
 
     // ---------------------------------------------------------------------
@@ -124,7 +117,6 @@ contract SUBAHook is BaseHook {
         PoolId pid = key.toId();
         poolInitialized[pid] = true;
         poolKeys[pid] = key;
-        poolCurrentEpoch[pid] = 0;
         epochs[pid][0] = Epoch({
             endBlock: block.number + epochDurationBlocks,
             settled: false,
@@ -136,54 +128,58 @@ contract SUBAHook is BaseHook {
     }
 
     // ---------------------------------------------------------------------
-    // beforeSwap — block direct swaps; force traders into the batch
+    // beforeSwap — ALWAYS buffer all swaps via mint + delta
     // ---------------------------------------------------------------------
-    function _beforeSwap(address sender, PoolKey calldata, SwapParams calldata, bytes calldata)
+    /// @dev hookData encodes the swapper (since msg.sender to PM is the router).
+    function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         internal
-        view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        // The keeper is allowed to swap (during epoch settlement).
-        if (sender == address(this) || sender == keeper) {
+        // Self-calls (settlement path) pass straight through to the AMM.
+        if (sender == address(this)) {
             return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
-        revert MustUseBatch();
-    }
-
-    // ---------------------------------------------------------------------
-    // User entry point: submit an order to the current epoch
-    // ---------------------------------------------------------------------
-    function submitOrder(PoolKey calldata key, bool zeroForOne, uint256 amountIn, uint256 minAmountOut)
-        external
-        returns (uint256 epochId)
-    {
-        PoolId pid = key.toId();
-        if (!poolInitialized[pid]) revert UnknownPool();
-        if (amountIn == 0) revert InvalidOrder();
-
-        epochId = poolCurrentEpoch[pid];
-        Currency tokenIn = zeroForOne ? key.currency0 : key.currency1;
-        IERC20(Currency.unwrap(tokenIn)).safeTransferFrom(msg.sender, address(this), amountIn);
-
-        pendingOrders[pid][epochId].push(
-            PendingOrder({user: msg.sender, zeroForOne: zeroForOne, amountIn: amountIn, minAmountOut: minAmountOut})
-        );
-        Epoch storage e = epochs[pid][epochId];
-        if (zeroForOne) {
-            e.totalBuyVolume += amountIn;
-        } else {
-            e.totalSellVolume += amountIn;
+        // Only handle exact-input swaps — exact-output is left unsupported
+        // for batches (would require quoting input from output).
+        if (params.amountSpecified >= 0) {
+            return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
 
-        emit OrderSubmitted(pid, epochId, msg.sender, zeroForOne, amountIn);
+        uint256 amountIn = uint256(-params.amountSpecified);
+        PoolId pid = key.toId();
+        uint256 epochId = poolCurrentEpoch[pid];
+
+        Currency tokenIn = params.zeroForOne ? key.currency0 : key.currency1;
+
+        // V4 AsyncSwap: mint ERC-6909 claim to custody the user's input
+        // inside PoolManager. The router still settles `amountIn` as normal.
+        poolManager.mint(address(this), tokenIn.toId(), amountIn);
+
+        address user = hookData.length >= 32 ? abi.decode(hookData, (address)) : sender;
+        uint256 minOut;
+        // Optionally pass minOut in the hookData (32 bytes user + 32 bytes minOut).
+        if (hookData.length >= 64) {
+            (, minOut) = abi.decode(hookData, (address, uint256));
+        }
+
+        pendingOrders[pid][epochId].push(
+            PendingOrder({user: user, zeroForOne: params.zeroForOne, amountIn: amountIn, minAmountOut: minOut})
+        );
+
+        Epoch storage e = epochs[pid][epochId];
+        if (params.zeroForOne) e.totalBuyVolume += amountIn;
+        else e.totalSellVolume += amountIn;
+
+        emit OrderBuffered(pid, epochId, user, params.zeroForOne, amountIn);
+
+        // Consume the full input, suppressing the AMM execution.
+        return (BaseHook.beforeSwap.selector, toBeforeSwapDelta(int128(uint128(amountIn)), 0), 0);
     }
 
     // ---------------------------------------------------------------------
-    // Settlement
+    // Settlement — keeper-only; runs inside PM unlock
     // ---------------------------------------------------------------------
-    /// @notice Settle an epoch. Computes a uniform clearing ratio and fills
-    /// all orders at it. Orders failing their slippage check are refunded.
     function settleEpoch(PoolKey calldata key, uint256 epochId) external onlyKeeper {
         PoolId pid = key.toId();
         Epoch storage e = epochs[pid][epochId];
@@ -192,16 +188,22 @@ contract SUBAHook is BaseHook {
         if (block.number < e.endBlock) revert EpochNotEnded();
 
         e.settled = true;
+        poolManager.unlock(abi.encode(key, epochId));
+    }
 
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        if (msg.sender != address(poolManager)) revert OnlyPoolManager();
+        (PoolKey memory key, uint256 epochId) = abi.decode(data, (PoolKey, uint256));
+        PoolId pid = key.toId();
+        Epoch storage e = epochs[pid][epochId];
         PendingOrder[] storage orders = pendingOrders[pid][epochId];
-        uint256 n = orders.length;
 
-        // Pre-pass: determine each order's would-be fill at the uniform 1:1
-        // price (proportional to side volumes). Mark slippage-failing orders
-        // as withdrawn — they don't participate in matching.
+        uint256 n = orders.length;
+        // Pre-pass: determine slippage-feasible orders at the uniform 1:1
+        // clearing price. Withdrawn orders don't participate in matching.
+        bool[] memory withdrawn = new bool[](n);
         uint256 buyVol = e.totalBuyVolume;
         uint256 sellVol = e.totalSellVolume;
-        bool[] memory withdrawn = new bool[](n);
         bool changed = true;
         while (changed) {
             changed = false;
@@ -219,32 +221,44 @@ contract SUBAHook is BaseHook {
                 }
             }
         }
-
         uint256 matched = buyVol < sellVol ? buyVol : sellVol;
 
-        // Settlement pass.
+        // Burn all ERC-6909 claims for tokens used in matching/refund. We
+        // burn the full original deposit per order and redirect to user.
         for (uint256 i = 0; i < n; i++) {
             PendingOrder storage o = orders[i];
+            Currency inCcy = o.zeroForOne ? key.currency0 : key.currency1;
+            Currency outCcy = o.zeroForOne ? key.currency1 : key.currency0;
+
+            // Burn the deposit (gives hook a positive delta on inCcy).
+            poolManager.burn(address(this), inCcy.toId(), o.amountIn);
+
             if (withdrawn[i]) {
-                Currency inCcy = o.zeroForOne ? key.currency0 : key.currency1;
-                IERC20(Currency.unwrap(inCcy)).safeTransfer(o.user, o.amountIn);
+                // Full refund of input.
+                poolManager.take(inCcy, o.user, o.amountIn);
                 continue;
             }
+
             uint256 side = o.zeroForOne ? buyVol : sellVol;
             uint256 fill = side == 0 ? 0 : (o.amountIn * matched) / side;
             uint256 refund = o.amountIn - fill;
 
-            if (fill > 0) {
-                Currency outCcy = o.zeroForOne ? key.currency1 : key.currency0;
-                IERC20(Currency.unwrap(outCcy)).safeTransfer(o.user, fill);
-            }
             if (refund > 0) {
-                Currency inCcy = o.zeroForOne ? key.currency0 : key.currency1;
-                IERC20(Currency.unwrap(inCcy)).safeTransfer(o.user, refund);
+                poolManager.take(inCcy, o.user, refund);
+            }
+            if (fill > 0) {
+                // Counter-side input becomes this side's output (1:1 uniform).
+                // Since we still hold the counter-side's ERC-6909 (will be
+                // burned when iterating those orders), the matched amounts
+                // net out at PM. We take outCcy from PM to fund the fill —
+                // this debit is balanced by the counter-side's burn credit.
+                poolManager.take(outCcy, o.user, fill);
             }
         }
 
-        // Start the next epoch automatically.
+        emit EpochSettled(pid, epochId, 1e18, matched);
+
+        // Start the next epoch.
         uint256 nextId = epochId + 1;
         poolCurrentEpoch[pid] = nextId;
         epochs[pid][nextId] = Epoch({
@@ -254,6 +268,8 @@ contract SUBAHook is BaseHook {
             totalSellVolume: 0
         });
         emit EpochStarted(pid, nextId, block.number + epochDurationBlocks);
+
+        return "";
     }
 
     // ---------------------------------------------------------------------

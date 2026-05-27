@@ -25,8 +25,12 @@ contract BCSHookTest is Test, Deployers {
     address bob = makeAddr("bob"); // partyB / seller
     address swapper = makeAddr("swapper");
 
-    uint160 constant TRIGGER_BELOW = 70000000000000000000000000000; // < SQRT_PRICE_1_1
-    uint160 constant TRIGGER_ABOVE = 90000000000000000000000000000; // > SQRT_PRICE_1_1
+    // SQRT_PRICE_1_1 = 79228162514264337593543950336 (2^96).
+    // TRIGGER_NEAR: just below current — even a small swap crosses it.
+    // TRIGGER_FAR: far below current — small swap does NOT cross.
+    uint160 constant TRIGGER_NEAR = 79228162514264337593543950000;
+    uint160 constant TRIGGER_FAR = 70000000000000000000000000000;
+    uint160 constant TRIGGER_BELOW = TRIGGER_NEAR;
 
     function setUp() public {
         deployFreshManagerAndRouters();
@@ -34,7 +38,6 @@ contract BCSHookTest is Test, Deployers {
 
         address hookAddr = address(
             uint160(type(uint160).max & clearAllHookPermissionsMask) | Hooks.BEFORE_SWAP_FLAG
-                | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
         );
         deployCodeTo("BCSHook.sol:BCSHook", abi.encode(manager), hookAddr);
         hook = BCSHook(hookAddr);
@@ -118,17 +121,16 @@ contract BCSHookTest is Test, Deployers {
     // Settlement
     // ---------------------------------------------------------------
     function test_swapNotCrossingTrigger_noSettlement() public {
-        uint256 id = _register(TRIGGER_BELOW, 1000);
+        // Trigger is far below current — tiny swap won't reach it.
+        uint256 id = hook.registerCommitment(poolKey, alice, bob, 100 ether, 100 ether, TRIGGER_FAR, 1000);
         _bothDeposit(id);
 
-        // Use a sqrtPriceLimit that's between current and trigger (so the
-        // limit does NOT cross the trigger). Current is SQRT_PRICE_1_1
-        // (~7.92e28); trigger is 7e28; limit just above trigger means
-        // the swap's range never includes trigger.
+        // sqrtPriceLimit set ABOVE trigger so the swap's range never includes
+        // the trigger — and current price hasn't moved either.
         vm.prank(swapper);
         swapRouter.swap(
             poolKey,
-            SwapParams({zeroForOne: true, amountSpecified: -1e15, sqrtPriceLimitX96: TRIGGER_BELOW + 1e26}),
+            SwapParams({zeroForOne: true, amountSpecified: -1e15, sqrtPriceLimitX96: TRIGGER_FAR + 1e26}),
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             ""
         );
