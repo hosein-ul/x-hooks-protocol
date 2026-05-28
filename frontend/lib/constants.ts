@@ -25,6 +25,10 @@ export type HookIdentity = {
   usage: string
   /** Which v4 hook callbacks are wired */
   permissions: string[]
+  /** Concrete real-world scenarios this hook unlocks */
+  useCases: string[]
+  /** A 1–2 paragraph deep explanation of the problem the hook solves */
+  whyItMatters: string
 }
 
 // Real deployed addresses on X Layer Mainnet (block 61221454)
@@ -69,6 +73,14 @@ IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
     sqrtPriceLimitX96: MIN_SQRT_RATIO + 1
 });
 poolManager.swap(poolKey, params, "");`,
+    useCases: [
+      "Whale-sized swaps where slippage from naive AMM execution would leak value to MEV bots.",
+      "DAO treasury rebalancing — opens a competitive solver auction for the best execution price.",
+      "Aggregator routers offering institutional-grade execution without running their own RFQ infrastructure.",
+      "Any swap above a configurable size threshold that should receive price improvement instead of raw AMM fills.",
+    ],
+    whyItMatters:
+      "On a standard AMM, large swaps move the curve and bots front-run, back-run, or sandwich them — value that should belong to the trader silently leaks to MEV. OFA flips the model: instead of letting bots extract, the hook seals the swap and invites them to compete for the right to fill it. Whoever offers the user the best price wins. If nobody bids, the AMM still executes as a safe fallback. The user always gets at least the AMM price — and usually better.",
   },
 
   bcshook: {
@@ -95,6 +107,14 @@ bcsHook.submitCommitment(
     token0Amount,        // amount of token0 to deliver
     token1Amount         // amount of token1 to receive
 );`,
+    useCases: [
+      "Market-makers and counterparties agreeing on a future exchange price without involving an off-chain escrow.",
+      "Treasury swaps that should only execute when the pool reaches a strategic threshold.",
+      "OTC desks settling bilateral trades trustlessly inside DEX infrastructure they already use.",
+      "Structured products that need price-conditional settlement primitives without governance.",
+    ],
+    whyItMatters:
+      "OTC trades have always required a trusted intermediary — an escrow contract, a multisig, a centralized desk. BCS removes them all. Two parties register their commitment on-chain; the hook watches every swap and settles the deal the moment the pool's spot price crosses the agreed trigger. Atomic, trustless, no governance. Collateral never leaves the two participants' control until the trigger is hit, and then it settles in the same transaction as the swap that crossed it.",
   },
 
   plthook: {
@@ -125,6 +145,14 @@ modifyLiquidityRouter.modifyLiquidity(
     }),
     hookData
 );`,
+    useCases: [
+      "Risk-tiered LP products where conservative capital takes the senior fee waterfall and yield-seekers take junior subordination.",
+      "Institutional LPs needing a defined risk profile — senior tranche behaves like a fixed-priority fee claim.",
+      "Yield-bearing primitives built on top of a single pool, exposing two different return/risk shapes to two different audiences.",
+      "Vaults and yield aggregators looking for capital-efficient ways to split exposure across the same liquidity range.",
+    ],
+    whyItMatters:
+      "Traditional Uniswap LPs all share the same risk and the same fee stream — there is no way to express preference for safety vs yield within a single pool. PLT borrows the CDO/tranche pattern from structured finance: senior LPs get fee priority and absorb impermanent loss last; junior LPs get the residual fees but eat IL first. Same pool, same range, two different risk shapes. It's the first on-chain primitive for tiered LP exposure that doesn't require a separate vault, oracle, or off-chain accounting.",
   },
 
   subahook: {
@@ -150,6 +178,14 @@ subaHook.settleEpoch(
     clearingSqrtPrice,  // uniform clearing price for this batch
     epochId
 );`,
+    useCases: [
+      "Token-launch pools where uniform pricing prevents sniping the first block.",
+      "Memecoin and high-volatility pairs where positional MEV would dominate retail flow.",
+      "DAO protocol-owned-liquidity venues that want fair, oracle-free price discovery on every epoch.",
+      "Periodic rebalancing of indices and treasury baskets — every basket member trades at the same clearing price.",
+    ],
+    whyItMatters:
+      "On a continuous AMM, position in the block determines price. Bots that pay for priority lanes win, and retail loses every time. SUBA imposes a simple rule: every order in the same epoch settles at the same price. There is no position-within-block to compete for. The model is the Frequent Batch Auction proposed by Budish, Cramton, and Shim — long argued to be the optimal market microstructure for fair execution. SUBA brings it to AMMs without an off-chain matching engine.",
   },
 
   calhook: {
@@ -176,6 +212,14 @@ uint256 id = calHook.submitCommitment(
     expiryBlock,        // auto-refund after this block
     token1Amount        // collateral to spend
 );`,
+    useCases: [
+      "On-chain limit orders that don't depend on a keeper network or a centralized orderbook.",
+      "Stop-loss and take-profit primitives for vaults, treasuries, and structured products.",
+      "Conditional treasury management — auto-buy a basis below a threshold, auto-sell above another.",
+      "Delegated execution for managed accounts: collateral is locked, triggers are public, anyone can fulfil.",
+    ],
+    whyItMatters:
+      "DEX users have asked for native limit orders since the first AMM shipped — and every previous attempt depended on off-chain keepers that introduced trust, latency, and liveness risk. CAL turns the swap itself into the trigger. Collateral lives in the hook, the trigger price is public, and any swap that crosses the trigger auto-executes the commitment atomically inside the same transaction. No keeper, no oracle, no governance. Just collateral plus a price.",
   },
 }
 
@@ -192,3 +236,9 @@ export function getHookIdentity(name: string): HookIdentity | undefined {
 
 export const EXPLORER_BASE = "https://www.oklink.com/x-layer/address/"
 export const EXPLORER_TX   = "https://www.oklink.com/x-layer/tx/"
+
+// Social / project links
+export const SOCIAL_LINKS = {
+  github:  "https://github.com/hosein-ul/workspace",
+  twitter: "https://x.com/XHooks_protocol",
+} as const
