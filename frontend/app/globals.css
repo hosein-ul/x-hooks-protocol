@@ -1,26 +1,171 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ────────────────────────────────────────────────────────────────────────
+ * X HOOKS PROTOCOL — Editorial Trading Terminal design system
+ * Tokens map to data-theme="dark" | "light" via next-themes
+ * ──────────────────────────────────────────────────────────────────────── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+  --font-sans:    var(--font-dm-sans);
+  --font-mono:    var(--font-jetbrains);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-ink:       var(--ink);
+  --color-ink-2:     var(--ink-2);
+  --color-muted:     var(--muted);
+  --color-rule:      var(--rule);
+  --color-signal:    var(--signal);
+  --color-gain:      var(--gain);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* Light theme — warm cream paper */
+  --surface-0: #f6f3ec;
+  --surface-1: #ffffff;
+  --surface-2: #efeadc;
+  --ink:       #100f0c;
+  --ink-2:     #2e2a22;
+  --muted:     #6a6558;
+  --rule:      #d8d2c0;
+  --signal:    #c14a17;
+  --gain:      #2c5e1c;
+}
+
+[data-theme="dark"] {
+  /* Dark theme — warm ink */
+  --surface-0: #0c0b09;
+  --surface-1: #15130f;
+  --surface-2: #1d1a14;
+  --ink:       #efe9d8;
+  --ink-2:     #c4bda8;
+  --muted:     #807a6b;
+  --rule:      #2a261d;
+  --signal:    #e26222;
+  --gain:      #5fa340;
+}
+
+* { border-color: var(--rule); }
+
+html {
+  background: var(--surface-0);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-0);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.005em;
+}
+
+/* ────── Editorial typography ────── */
+.display {
+  font-family: var(--font-display), Georgia, serif;
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.display-italic {
+  font-family: var(--font-display), Georgia, serif;
+  font-style: italic;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+}
+
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-feature-settings: "zero", "ss02";
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+/* ────── Editorial grid rules ────── */
+.rule-t { border-top: 1px solid var(--rule); }
+.rule-b { border-bottom: 1px solid var(--rule); }
+.rule-l { border-left: 1px solid var(--rule); }
+.rule-r { border-right: 1px solid var(--rule); }
+
+/* Thin double-rule for editorial section breaks */
+.rule-double-t {
+  border-top: 1px solid var(--rule);
+  box-shadow: inset 0 3px 0 var(--surface-0), inset 0 4px 0 var(--rule);
+}
+
+/* ────── Atmosphere: grain overlay ────── */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.45'/></svg>");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+}
+[data-theme="light"] .grain::before { opacity: 0.08; }
+
+/* ────── Marquee ticker ────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 60s linear infinite;
+}
+
+/* ────── Selection ────── */
+::selection {
+  background: var(--signal);
+  color: var(--surface-0);
+}
+
+/* ────── Scrollbar ────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--surface-0); }
+::-webkit-scrollbar-thumb { background: var(--rule); border: 2px solid var(--surface-0); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ────── Reveal on scroll (lazy enhancement) ────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ────── Underline ink ────── */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  transition: background-size 0.3s ease;
+}
+.link-underline:hover { background-size: 100% 2px; }
+
+/* ────── Live indicator ────── */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+.dot-live {
+  background: var(--gain);
+  animation: pulse-soft 2.4s ease-in-out infinite;
 }

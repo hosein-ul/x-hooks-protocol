@@ -167,41 +167,5 @@ contract DeployAll is Script {
         console.log("CALHook:       ", address(calHook));
         console.log("===================================================");
 
-        // ---------------------------------------------------------------
-        // Write deployments JSON
-        // ---------------------------------------------------------------
-        string memory json = string(
-            abi.encodePacked(
-                '{\n',
-                '  "chainId": 196,\n',
-                '  "deployedAt": "',
-                vm.toString(block.number),
-                '",\n',
-                '  "contracts": {\n',
-                '    "HookRegistry": "',
-                vm.toString(address(registry)),
-                '",\n',
-                '    "OFAHook": "',
-                vm.toString(address(ofaHook)),
-                '",\n',
-                '    "BCSHook": "',
-                vm.toString(address(bcsHook)),
-                '",\n',
-                '    "PLTHook": "',
-                vm.toString(address(pltHook)),
-                '",\n',
-                '    "SUBAHook": "',
-                vm.toString(address(subaHook)),
-                '",\n',
-                '    "CALHook": "',
-                vm.toString(address(calHook)),
-                '"\n',
-                '  }\n',
-                '}'
-            )
-        );
-
-        vm.writeFile("../deployments/xlayer-mainnet.json", json);
-        console.log("Deployments written to deployments/xlayer-mainnet.json");
     }
 }

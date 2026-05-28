@@ -1,151 +1,194 @@
+import type { LucideIcon } from "lucide-react"
+import {
+  Gavel,
+  Handshake,
+  Layers,
+  TimerReset,
+  Target,
+  Network,
+} from "lucide-react"
+
 export type HookIdentity = {
-  icon: string
-  gradient: string
+  /** Lucide icon component — NO emojis */
+  Icon: LucideIcon
+  /** Single-letter editorial glyph used in big-display contexts */
+  glyph: string
+  /** Roman numeral position in the taxonomy */
+  ordinal: string
   type: string
   shortname: string
   tagline: string
+  /** One-line technical summary in headline voice */
+  headline: string
   primitives: string[]
   mechanics: string[]
   usage: string
+  /** Which v4 hook callbacks are wired */
+  permissions: string[]
 }
 
+// Real deployed addresses on X Layer Mainnet (block 61221454)
+// Env vars override for other deployments
 export const HOOK_ADDRESSES = {
-  OFAHook: (process.env.NEXT_PUBLIC_OFAH ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
-  BCSHook: (process.env.NEXT_PUBLIC_BCSH ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
-  PLTHook: (process.env.NEXT_PUBLIC_PLTH ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
-  SUBAHook: (process.env.NEXT_PUBLIC_SUBAH ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
-  CALHook: (process.env.NEXT_PUBLIC_CALH ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
+  OFAHook:  (process.env.NEXT_PUBLIC_OFAH  ?? "0x955523a8eD7999e05015bC6F7b854D447717c088") as `0x${string}`,
+  BCSHook:  (process.env.NEXT_PUBLIC_BCSH  ?? "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080") as `0x${string}`,
+  PLTHook:  (process.env.NEXT_PUBLIC_PLTH  ?? "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40") as `0x${string}`,
+  SUBAHook: (process.env.NEXT_PUBLIC_SUBAH ?? "0xD8b747E0e895eD02FbDac6378A9548368374d088") as `0x${string}`,
+  CALHook:  (process.env.NEXT_PUBLIC_CALH  ?? "0x3F26eF2279a0FfbBdC8270198106633008d78088") as `0x${string}`,
+  Registry: (process.env.NEXT_PUBLIC_HOOK_REGISTRY ?? "0xeBc902Cee74345DD23f63E2f132f81E5fBE1D56D") as `0x${string}`,
 }
 
-const OFA_IDENTITY: HookIdentity = {
-  icon: '⚡',
-  gradient: 'from-yellow-500 to-orange-500',
-  type: 'Execution',
-  shortname: 'OFA',
-  tagline: 'Large swaps trigger N-block solver auction with AMM fallback',
-  primitives: ['MEV Protection', 'Auction', 'Price Discovery'],
-  mechanics: [
-    'Swaps above threshold pause execution and open a sealed solver auction',
-    'Solvers compete for N blocks; best bid fills the trade at improved price',
-    'If no solver responds, trade falls back to normal AMM execution',
-    'Hook holds ERC-6909 claims during the auction window',
-  ],
-  usage: `// Add hookData to large swaps — no extra setup needed
+// V4 PoolManager + demo pool tokens deployed by DeployPool.s.sol
+export const POOL_MANAGER = "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32" as `0x${string}`
+export const POOL_TOKENS = {
+  token0: "0x8199bFf13918c270ced3df9776862663b7c952e3" as `0x${string}`, // XHKB
+  token1: "0xE26b32C27E39a736325E5D89366104425b8EF6EF" as `0x${string}`, // XHKA
+} as const
+
+const HOOK_IDENTITY_MAP: Record<string, HookIdentity> = {
+  ofahook: {
+    Icon: Gavel,
+    glyph: "I",
+    ordinal: "I.",
+    type: "Execution",
+    shortname: "OFA",
+    tagline: "Large swaps trigger an N-block solver auction with AMM fallback.",
+    headline: "Orderflow auction with sealed solver competition.",
+    primitives: ["MEV Protection", "Sealed Auction", "Price Discovery"],
+    permissions: ["beforeSwap", "beforeSwapReturnDelta"],
+    mechanics: [
+      "Swaps above the configured threshold pause execution and open a sealed solver auction in the same transaction.",
+      "Solvers bid for N consecutive blocks; the winning bid fills the trade at an improved price relative to the AMM curve.",
+      "If no solver responds within the window, the trade falls back to the regular AMM execution path with no penalty.",
+      "Pending orderflow is held as ERC-6909 claims for the duration of the auction — there is no early withdrawal.",
+    ],
+    usage: `// Large swap automatically triggers OFA — no special params required
 IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
     zeroForOne: true,
-    amountSpecified: -100_000e18, // large input triggers auction
+    amountSpecified: -100_000e18, // large input → opens auction
     sqrtPriceLimitX96: MIN_SQRT_RATIO + 1
 });
 poolManager.swap(poolKey, params, "");`,
-}
+  },
 
-const BCS_IDENTITY: HookIdentity = {
-  icon: '🤝',
-  gradient: 'from-blue-500 to-cyan-500',
-  type: 'Settlement',
-  shortname: 'BCS',
-  tagline: 'Two-party OTC deals auto-settle when spot price crosses trigger',
-  primitives: ['OTC Settlement', 'Price Trigger', 'Bilateral'],
-  mechanics: [
-    'Two counterparties register a bilateral commitment with a trigger price',
-    'On each swap, the hook reads live sqrtPriceX96 via StateLibrary',
-    'When spot price crosses the agreed trigger, commitment auto-settles atomically',
-    'Collateral is transferred directly via ERC-20; no intermediary custody',
-  ],
-  usage: `// Register a bilateral commitment
+  bcshook: {
+    Icon: Handshake,
+    glyph: "II",
+    ordinal: "II.",
+    type: "Settlement",
+    shortname: "BCS",
+    tagline: "Two-party OTC commitments auto-settle when spot crosses a trigger.",
+    headline: "Bilateral commitment settlement on a trigger price.",
+    primitives: ["OTC Settlement", "Price Trigger", "Bilateral"],
+    permissions: ["beforeSwap"],
+    mechanics: [
+      "Two counterparties register a bilateral commitment containing a trigger sqrtPrice and the size of each leg.",
+      "On every swap the hook reads live price via StateLibrary.getSlot0 against the pool's current state.",
+      "When spot crosses the trigger, the commitment settles atomically in a single transaction.",
+      "Collateral transfers via ERC-20 safeTransfer — no intermediary custody, no escrow contract.",
+    ],
+    usage: `// Register a bilateral OTC commitment
 bcsHook.submitCommitment(
     poolKey,
     counterparty,        // address of other party
     triggerSqrtPrice,    // execution price as sqrtPriceX96
-    token0Amount,        // how much token0 to deliver
-    token1Amount         // how much token1 to receive
+    token0Amount,        // amount of token0 to deliver
+    token1Amount         // amount of token1 to receive
 );`,
-}
+  },
 
-const PLT_IDENTITY: HookIdentity = {
-  icon: '🏗️',
-  gradient: 'from-purple-500 to-pink-500',
-  type: 'Liquidity',
-  shortname: 'PLT',
-  tagline: 'Senior/Junior LP tranches with 70/30 fee waterfall, CDP-style IL protection',
-  primitives: ['Tranching', 'Fee Waterfall', 'IL Protection'],
-  mechanics: [
-    'LPs choose SENIOR (fee-priority, IL-protected) or JUNIOR (higher risk, lower fees)',
-    'After each swap, fees split 70% to senior tranche, 30% to junior',
-    'Senior bears impermanent loss last; junior absorbs IL first — like structured credit',
-    'hookData = abi.encode(lpAddress, tranche) on every addLiquidity call',
-  ],
-  usage: `// Add liquidity to senior tranche
+  plthook: {
+    Icon: Layers,
+    glyph: "III",
+    ordinal: "III.",
+    type: "Liquidity",
+    shortname: "PLT",
+    tagline: "CDP-style LP tranching — 70% of fees waterfall to Senior, 30% to Junior.",
+    headline: "Programmable liquidity tranching with structured fee waterfall.",
+    primitives: ["Tranching", "Fee Waterfall", "IL Protection"],
+    permissions: ["afterInitialize", "beforeAddLiquidity", "beforeRemoveLiquidity", "afterSwap"],
+    mechanics: [
+      "LPs choose SENIOR (fee-priority, impermanent-loss last) or JUNIOR (higher risk, fee residual) on deposit.",
+      "After each swap, 70% of fees flow to the senior tranche, 30% to junior — a fixed structured waterfall.",
+      "Senior bears impermanent loss last; junior absorbs IL first, replicating CDO subordination on-chain.",
+      "hookData = abi.encode(lpAddress, tranche) must be passed on every deposit to bind the position.",
+    ],
+    usage: `// Add liquidity to senior tranche
 bytes memory hookData = abi.encode(msg.sender, PLTHook.Tranche.SENIOR);
 modifyLiquidityRouter.modifyLiquidity(
     poolKey,
     IPoolManager.ModifyLiquidityParams({
         tickLower: -887220,
-        tickUpper: 887220,
+        tickUpper:  887220,
         liquidityDelta: int256(1000e18),
         salt: 0
     }),
     hookData
 );`,
-}
+  },
 
-const SUBA_IDENTITY: HookIdentity = {
-  icon: '🔨',
-  gradient: 'from-green-500 to-teal-500',
-  type: 'Execution',
-  shortname: 'SUBA',
-  tagline: 'All swaps buffered into epochs, settled at uniform clearing price',
-  primitives: ['Batch Auction', 'Uniform Price', 'Anti-MEV'],
-  mechanics: [
-    'All swaps during an epoch are intercepted and buffered as ERC-6909 claims',
-    'At epoch end, keeper calls settleEpoch() to determine uniform clearing price',
-    'Every order executes at the same price — eliminates front-running entirely',
-    'Unsettled orders can be withdrawn by users if epoch expires unclaimed',
-  ],
-  usage: `// Normal swaps are automatically batched — no special params needed
-// Keeper settles each epoch:
+  subahook: {
+    Icon: TimerReset,
+    glyph: "IV",
+    ordinal: "IV.",
+    type: "Execution",
+    shortname: "SUBA",
+    tagline: "Swaps buffered into epochs and settled at a single uniform clearing price.",
+    headline: "Sealed-bid uniform-price batch auction over N blocks.",
+    primitives: ["Batch Auction", "Uniform Price", "Anti-MEV"],
+    permissions: ["afterInitialize", "beforeSwap", "beforeSwapReturnDelta"],
+    mechanics: [
+      "All swaps during an epoch are intercepted at beforeSwap and held as ERC-6909 claims against the manager.",
+      "At epoch end, the designated keeper calls settleEpoch() supplying a uniform clearing price.",
+      "Every order in the epoch executes at the same price — no front-running, no positional MEV.",
+      "Users may withdraw unbuffered positions if an epoch expires without a settlement transaction.",
+    ],
+    usage: `// Swaps are automatically batched — no special params needed
+// Keeper settles each epoch at the end of the window:
 subaHook.settleEpoch(
     poolKey,
-    clearingSqrtPrice, // uniform price for this batch
+    clearingSqrtPrice,  // uniform clearing price for this batch
     epochId
 );`,
-}
+  },
 
-const CAL_IDENTITY: HookIdentity = {
-  icon: '🎯',
-  gradient: 'from-red-500 to-rose-500',
-  type: 'Forward Market',
-  shortname: 'CAL',
-  tagline: 'Collateral commitments auto-execute as liquidity when price crosses trigger',
-  primitives: ['Limit Orders', 'Collateral', 'Auto-Execute'],
-  mechanics: [
-    'Users lock ERC-20 collateral with a directional trigger price (BUY or SELL)',
-    'On each swap, hook checks if current sqrtPrice has crossed the trigger',
-    'When triggered, collateral executes atomically via sync/settle/take pattern',
-    'Expired commitments are refunded; owners can cancel any active commitment',
-  ],
-  usage: `// Post a BUY commitment: buy token0 with token1 when price drops to trigger
+  calhook: {
+    Icon: Target,
+    glyph: "V",
+    ordinal: "V.",
+    type: "Forward Market",
+    shortname: "CAL",
+    tagline: "ERC-20 collateral commitments auto-execute when price reaches a trigger.",
+    headline: "Commitments-as-liquidity — collateralized limit orders.",
+    primitives: ["Limit Orders", "Collateral", "Auto-Execute"],
+    permissions: ["beforeSwap", "beforeSwapReturnDelta"],
+    mechanics: [
+      "Users lock ERC-20 collateral with a directional trigger price (BUY or SELL) and an expiry block.",
+      "On each swap the hook checks whether the current sqrtPrice crossed the trigger in the user's favor.",
+      "When triggered, collateral executes atomically against the pool via the sync / settle / take pattern.",
+      "Expired commitments are auto-refunded; owners may cancel any active commitment at any time.",
+    ],
+    usage: `// Post a BUY commitment: purchase token0 with token1 at trigger price
 uint256 id = calHook.submitCommitment(
     poolKey,
     CALHook.Direction.BUY,
-    triggerSqrtPrice,   // execute when spot <= this
+    triggerSqrtPrice,   // execute when spot <= this price
     expiryBlock,        // auto-refund after this block
     token1Amount        // collateral to spend
 );`,
+  },
 }
 
-// Map from lowercase address -> identity
-// NEXT_PUBLIC_* vars are inlined at build time
-export const HOOK_IDENTITY: Record<string, HookIdentity> = {
-  [HOOK_ADDRESSES.OFAHook.toLowerCase()]: OFA_IDENTITY,
-  [HOOK_ADDRESSES.BCSHook.toLowerCase()]: BCS_IDENTITY,
-  [HOOK_ADDRESSES.PLTHook.toLowerCase()]: PLT_IDENTITY,
-  [HOOK_ADDRESSES.SUBAHook.toLowerCase()]: SUBA_IDENTITY,
-  [HOOK_ADDRESSES.CALHook.toLowerCase()]: CAL_IDENTITY,
+// Stable ordered list for landing-page taxonomy / dashboard grid.
+export const HOOK_ORDER = ["OFAHook", "BCSHook", "PLTHook", "SUBAHook", "CALHook"] as const
+
+// Default icon for the Registry / fallback rendering.
+export const RegistryIcon = Network
+
+export function getHookIdentity(name: string): HookIdentity | undefined {
+  const key = name.toLowerCase().replace(/[^a-z0-9]/g, "")
+  return HOOK_IDENTITY_MAP[key]
 }
 
-export function getHookIdentity(address: string): HookIdentity | undefined {
-  return HOOK_IDENTITY[address.toLowerCase()]
-}
-
-export const EXPLORER_BASE = 'https://www.oklink.com/x-layer/address/'
+export const EXPLORER_BASE = "https://www.oklink.com/x-layer/address/"
+export const EXPLORER_TX   = "https://www.oklink.com/x-layer/tx/"
