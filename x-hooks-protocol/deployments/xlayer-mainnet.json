@@ -1,13 +1,33 @@
 {
   "chainId": 196,
-  "deployedAt": "61211835",
+  "deployedAt": "61221454",
   "deployer": "0xC0d1AC70A3A32BceA4a124e65eb22eb5f0d0Adc2",
   "contracts": {
     "HookRegistry": "0xeBc902Cee74345DD23f63E2f132f81E5fBE1D56D",
-    "OFAHook": "0x955523a8eD7999e05015bC6F7b854D447717c088",
-    "BCSHook": "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080",
-    "PLTHook": "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40",
-    "SUBAHook": "0xD8b747E0e895eD02FbDac6378A9548368374d088",
-    "CALHook": "0x3F26eF2279a0FfbBdC8270198106633008d78088"
+    "OFAHook":      "0x955523a8eD7999e05015bC6F7b854D447717c088",
+    "BCSHook":      "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080",
+    "PLTHook":      "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40",
+    "SUBAHook":     "0xD8b747E0e895eD02FbDac6378A9548368374d088",
+    "CALHook":      "0x3F26eF2279a0FfbBdC8270198106633008d78088"
+  },
+  "pools": {
+    "token0": "0x8199bFf13918c270ced3df9776862663b7c952e3",
+    "token1": "0xE26b32C27E39a736325E5D89366104425b8EF6EF",
+    "token0Symbol": "XHKB",
+    "token1Symbol": "XHKA",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
+    "initializedPools": {
+      "CALHook": "0x3F26eF2279a0FfbBdC8270198106633008d78088",
+      "OFAHook": "0x955523a8eD7999e05015bC6F7b854D447717c088",
+      "BCSHook": "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080",
+      "PLTHook": "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40",
+      "SUBAHook": "0xD8b747E0e895eD02FbDac6378A9548368374d088"
+    },
+    "deployTxHashes": {
+      "deployTokenA": "0xd84d5fcab68d2885ae334ef5defd50affbbe2e337eb200642e32cefeec7601b3",
+      "deployTokenB": "0x540074a82d517cc8163a0caeaf8649e31262370b52a844ade11b7840adf946bb"
+    }
   }
 }
