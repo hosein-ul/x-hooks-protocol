@@ -74,13 +74,24 @@
 
 ---
 
-## Session 3 — NOT STARTED ❌
-See SESSION3_PROMPT.md for full prompt.
+## Session 3 — COMPLETE ✅
+**Branch:** claude/happy-maxwell-8yCvb
 
-### What needs to be built:
-- [ ] frontend/ Next.js 14 project
-- [ ] wagmi + RainbowKit + X Layer chain config
-- [ ] HookCard components
-- [ ] Main dashboard (reads live from HookRegistry)
-- [ ] Hook detail pages
-- [ ] .env.local populated from deployments JSON
+### What was built:
+- [x] frontend/ Next.js 16 project (App Router, TypeScript, Tailwind v4)
+- [x] wagmi v2 + RainbowKit v2 + X Layer chain config (Chain 196)
+- [x] HookCard component with gradient headers, copy address, OKLink link
+- [x] Main dashboard (/) — stats bar + 5-hook grid, live block number in header
+- [x] Hook detail pages (/hooks/[address]) — mechanics, code snippet, sidebar stats
+- [x] useHookRegistry + useRegistryStats + useHookInfo custom hooks (30s auto-refresh)
+- [x] .env.local populated with simulation addresses from PROGRESS.md
+- [x] `npm run build` passes — clean TypeScript, 0 errors
+
+### Key technical notes:
+- Next.js 16: `params` is `Promise<{...}>` — server pages use `await params`
+- Tailwind v4 via `@import "tailwindcss"` (no config file needed)
+- wagmi v2 `useReadContracts` for batch registry reads with `satisfies` type annotation
+- tsconfig target bumped to ES2020 for BigInt literal support
+- Identity map keyed by lowercase address (NEXT_PUBLIC_* inlined at build time)
+- Fallback to hardcoded hook data when registry not yet deployed
+- Dark theme (bg-gray-950) throughout; RainbowKit darkTheme() modal
