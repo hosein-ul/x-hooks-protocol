@@ -3,6 +3,11 @@
 import { useReadContract, useReadContracts } from 'wagmi'
 import { HOOK_REGISTRY_ADDRESS, HOOK_REGISTRY_ABI } from '@/lib/contracts'
 
+/** X Layer mainnet — all registry reads are pinned here so the dashboard
+ *  shows live data even when the visitor's wallet is on another chain or
+ *  not connected at all. */
+const X_LAYER_CHAIN_ID = 196 as const
+
 export type HookInfo = {
   hookAddress: `0x${string}`
   hookType: number
@@ -22,21 +27,23 @@ export function useAllHookInfos() {
     address: HOOK_REGISTRY_ADDRESS,
     abi: HOOK_REGISTRY_ABI,
     functionName: 'getAllHooks',
+    chainId: X_LAYER_CHAIN_ID,
     query: { refetchInterval: 30_000 },
   })
 
   const hookAddresses = (addresses ?? []) as `0x${string}`[]
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const contracts = hookAddresses.map((addr) => ({
     address: HOOK_REGISTRY_ADDRESS,
     abi: HOOK_REGISTRY_ABI,
     functionName: 'getHookInfo' as const,
     args: [addr] as const,
-  })) satisfies readonly { address: `0x${string}`; abi: typeof HOOK_REGISTRY_ABI; functionName: 'getHookInfo'; args: readonly [`0x${string}`] }[]
+    chainId: X_LAYER_CHAIN_ID,
+  })) satisfies readonly { address: `0x${string}`; abi: typeof HOOK_REGISTRY_ABI; functionName: 'getHookInfo'; args: readonly [`0x${string}`]; chainId: number }[]
 
   const { data: hookInfoResults, isLoading: loadingInfos } = useReadContracts({
     contracts: contracts ?? [],
+    allowFailure: true,
     query: {
       enabled: hookAddresses.length > 0,
       refetchInterval: 30_000,
@@ -61,11 +68,13 @@ export function useRegistryStats() {
         address: HOOK_REGISTRY_ADDRESS,
         abi: HOOK_REGISTRY_ABI,
         functionName: 'getHookCount',
+        chainId: X_LAYER_CHAIN_ID,
       },
       {
         address: HOOK_REGISTRY_ADDRESS,
         abi: HOOK_REGISTRY_ABI,
         functionName: 'getPoolCount',
+        chainId: X_LAYER_CHAIN_ID,
       },
     ],
     query: { refetchInterval: 30_000 },
@@ -84,6 +93,7 @@ export function useHookInfo(address: `0x${string}`) {
     abi: HOOK_REGISTRY_ABI,
     functionName: 'getHookInfo',
     args: [address],
+    chainId: X_LAYER_CHAIN_ID,
     query: { refetchInterval: 30_000 },
   })
 
