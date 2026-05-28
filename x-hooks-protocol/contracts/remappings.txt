@@ -2,9 +2,10 @@
 @uniswap/v4-periphery/=lib/v4-periphery/
 v4-core/=lib/v4-core/src/
 v4-periphery/=lib/v4-periphery/src/
-v4-hooks-public/=lib/v4-hooks-public/src/
+v4-hooks-public/=src/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 solmate/=lib/v4-core/lib/solmate/
 forge-std/=lib/forge-std/src/
 ds-test/=lib/forge-std/lib/ds-test/src/
 permit2/=lib/permit2/
+hook-miner/=lib/v4-periphery/test/shared/
