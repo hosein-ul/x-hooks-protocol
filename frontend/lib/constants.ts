@@ -239,6 +239,6 @@ export const EXPLORER_TX   = "https://www.oklink.com/x-layer/tx/"
 
 // Social / project links
 export const SOCIAL_LINKS = {
-  github:  "https://github.com/hosein-ul/workspace",
+  github:  "https://github.com/hosein-ul/x-hooks-protocol",
   twitter: "https://x.com/XHooks_protocol",
 } as const
