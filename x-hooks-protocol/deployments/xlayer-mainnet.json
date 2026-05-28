@@ -19,15 +19,65 @@
     "tickSpacing": 60,
     "poolManager": "0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32",
     "initializedPools": {
-      "CALHook": "0x3F26eF2279a0FfbBdC8270198106633008d78088",
-      "OFAHook": "0x955523a8eD7999e05015bC6F7b854D447717c088",
-      "BCSHook": "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080",
-      "PLTHook": "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40",
-      "SUBAHook": "0xD8b747E0e895eD02FbDac6378A9548368374d088"
+      "OFAHook":  "0x955523a8eD7999e05015bC6F7b854D447717c088",
+      "BCSHook":  "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080",
+      "PLTHook":  "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40",
+      "SUBAHook": "0xD8b747E0e895eD02FbDac6378A9548368374d088",
+      "CALHook":  "0x3F26eF2279a0FfbBdC8270198106633008d78088"
     },
     "deployTxHashes": {
       "deployTokenA": "0xd84d5fcab68d2885ae334ef5defd50affbbe2e337eb200642e32cefeec7601b3",
       "deployTokenB": "0x540074a82d517cc8163a0caeaf8649e31262370b52a844ade11b7840adf946bb"
+    }
+  },
+  "swapExecution": {
+    "swapHelper": "0xb1d11d60fe8665ca2e5609e33d679c48c90d4108",
+    "tickRange": { "lower": -600, "upper": 600 },
+    "liquidityPerPool": "10000e18",
+    "swapAmountIn": "1e18",
+    "txHashes": {
+      "deploySwapHelper":    "0x5db355cb2285db1649f2b061d0dfa971428183ccebfded0df3c5be313223ca77",
+      "OFAHook_addLiquidity":"0x7b26440e85d83554df2a11edaa2e0763557551e5d45e8e9fec88f6a4f929a6c9",
+      "OFAHook_swap":        "0xd64f07ad59f084230ef42e3b695265b01d88cf5396e5f0bfba6409673976c3e7",
+      "BCSHook_addLiquidity":"0xa612038aaf2c4bab5be0eab17da18d8d1431c0f516b564fdd2dc01c12c6024d1",
+      "BCSHook_swap":        "0x0b38dc73e4a33ac511336663c4711c451ee26d9c498d95e5c8b58af4a4460da3",
+      "PLTHook_addLiquidity":"0x80deb4538c1225de430aac55844af36f64167ef9cb08dc198cf344d4c7d6e2e5",
+      "PLTHook_swap":        "0x8635c3b6a9804e228201439bc0849d26b63c00ba885e42f08450886fab2b5398",
+      "SUBAHook_addLiquidity":"0x2cf7ce7f46e3b6f98db39dad63eba5fdc396b25c30eae2a30f5325361c90124e",
+      "SUBAHook_swap":       "0xbdff1ebfbcc90b02332e2bc2c8097076f89af91829712ddb96a9f8842310ef92",
+      "CALHook_addLiquidity":"0x945a7f722731ba55b4ce97bb29ebc250915e4ee6f5e73de96969dd6bd5a6beed",
+      "CALHook_swap":        "0x880201ff6ba94dacd83dce1c50873ac154a1141f4ccd4af03ed7f471b5996bdb"
+    },
+    "results": {
+      "OFAHook":  { "swapDelta0": "-1e18", "swapDelta1": "+0.9969e18", "hookFired": "beforeSwap (small swap, passed through)" },
+      "BCSHook":  { "swapDelta0": "-1e18", "swapDelta1": "+0.9969e18", "hookFired": "beforeSwap" },
+      "PLTHook":  { "swapDelta0": "-1e18", "swapDelta1": "+0.9969e18", "hookFired": "afterSwap (fee tranche tracking)" },
+      "SUBAHook": { "swapDelta0": "-1e18", "swapDelta1": "0",          "hookFired": "beforeSwap (OrderBuffered — batched for settlement)" },
+      "CALHook":  { "swapDelta0": "-1e18", "swapDelta1": "+0.9969e18", "hookFired": "beforeSwap (no active orders, passed through)" }
+    }
+  },
+  "registryLinks": {
+    "hookRegistry": "0xeBc902Cee74345DD23f63E2f132f81E5fBE1D56D",
+    "poolCount": 5,
+    "interactionsPerHook": 1,
+    "poolIds": {
+      "OFAHook":  "0xd2dbfc52093172c084f07489b035367c83ba38e143e21b1236ebe59202199cb6",
+      "BCSHook":  "0x1202c5ade749da93a0f97449d92bc8bfd1db74cc11b49e2afc9051ca79964976",
+      "PLTHook":  "0x57dcbf83710828f3d530daf53725c0faacc970afd0cb23e1965e21d3d5326f06",
+      "SUBAHook": "0x600edb115d98e91142105e77f29eb1f87c05dbfa0bd7c0b800f62847feb746fa",
+      "CALHook":  "0xa3dfc4b76570d536daa1b9154e0ffeebb530e1a637d53ea9debb5a8c0ac634fa"
+    },
+    "txHashes": {
+      "OFA_linkPool":          "0xcc4a374f706442fdbf0db7006381a56d62ef680dcf8eb393cbddb6f4c604df5f",
+      "OFA_recordInteraction": "0x96560685c900866463935c5ad4a06ca1b968d1c3c67860bd86b0ff07cfb3623d",
+      "BCS_linkPool":          "0x56c35f83681f12a46a631a9017bbca84396cb8c3b31c3daada2580119bf64ad4",
+      "BCS_recordInteraction": "0x33ce270487f1154f9b2d889da9c9995f4879f400794e5550cb4b37b22747bcdc",
+      "PLT_linkPool":          "0x40a3b8eacdfdc8d06b0dd3f302b79a3ec5362d9b6f40e83524e60d6a5a557e0b",
+      "PLT_recordInteraction": "0x296d94d2fa78da47ef2a9a360b70ebba280a3aceece569c59af433f849cbc154",
+      "SUBA_linkPool":          "0x1b97cc1a0d1195269866416a4ada2aff0667e804517de3e70a801681346b8b2c",
+      "SUBA_recordInteraction": "0xd3f369e9d88efc1936b599734a904bf60c2a91b7eb782a9477fbf57ab713b172",
+      "CAL_linkPool":          "0xe2961c047288cbe9e9dd33c39901d96ec92df9d310418faff47745615e6bedb8",
+      "CAL_recordInteraction": "0x0e756f8458bdc469640b67c5ca9122bfe712abd0c67ea497a10f48ada50d969a"
     }
   }
 }
