@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient, http } from 'viem'
-import { HOOK_REGISTRY_ABI } from '@/lib/contracts'
+import { HOOK_REGISTRY_ABI, HOOK_REGISTRY_ADDRESS } from '@/lib/contracts'
 
-const REGISTRY = (process.env.NEXT_PUBLIC_HOOK_REGISTRY ?? '0x0000000000000000000000000000000000000000') as `0x${string}`
+// Single source of truth — already falls back to the real on-chain address
+// when NEXT_PUBLIC_HOOK_REGISTRY isn't present in the runtime environment.
+const REGISTRY = HOOK_REGISTRY_ADDRESS
 
 const RPC_URLS = [
   'https://rpc.xlayer.tech',
   'https://xlayerrpc.okx.com',
-  'https://x-layer.drpc.org',
+  'https://xlayer.drpc.org',
 ]
 
 async function getWorkingClient() {
