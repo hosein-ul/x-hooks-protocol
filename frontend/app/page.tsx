@@ -20,6 +20,7 @@ import {
 } from "@/lib/constants"
 import { useAllHookInfos, useRegistryStats } from "@/hooks/useHookRegistry"
 import { motion, type Variants } from "framer-motion"
+import { ProtocolGraph } from "@/components/protocol-graph"
 
 const containerVariants: Variants = {
   hidden: {},
@@ -124,20 +125,27 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Stats column */}
+              {/* Stats column + protocol graph */}
               <motion.div
-                className="col-span-12 md:col-span-5 grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)"
+                className="col-span-12 md:col-span-5 flex flex-col gap-px"
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
               >
-                <Stat label="Hooks Deployed" value={liveHookCount.toString().padStart(2, "0")} />
-                <Stat label="Pools Registered" value={livePoolCount.toString().padStart(2, "0")} />
-                <Stat
-                  label="Interactions"
-                  value={totalInteractions > 0 ? totalInteractions.toLocaleString() : "—"}
-                />
-                <Stat label="Chain" value="X-LAYER" sub="196" />
+                {/* Animated protocol graph */}
+                <div className="border border-(--rule) bg-(--surface-1) py-4">
+                  <ProtocolGraph />
+                </div>
+                {/* Live stats */}
+                <div className="grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
+                  <Stat label="Hooks Deployed" value={liveHookCount.toString().padStart(2, "0")} />
+                  <Stat label="Pools Registered" value={livePoolCount.toString().padStart(2, "0")} />
+                  <Stat
+                    label="Interactions"
+                    value={totalInteractions > 0 ? totalInteractions.toLocaleString() : "—"}
+                  />
+                  <Stat label="Chain" value="X-LAYER" sub="196" />
+                </div>
               </motion.div>
             </div>
           </div>
@@ -255,7 +263,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* SECTION — DEEP DIVE: every hook explained in depth */}
+        {/* SECTION — DEEP DIVE */}
         <section className="border-b border-(--rule)">
           <motion.div
             className="mx-auto max-w-[1400px] px-6 py-20"
@@ -413,7 +421,7 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* SECTION — colophon / architecture */}
+        {/* SECTION — colophon */}
         <section className="border-b border-(--rule)">
           <motion.div
             className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
@@ -488,7 +496,6 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Pool ID table */}
             <div className="border border-(--rule) mb-6">
               {([
                 ["OFAHook",  "0xd2dbfc52093172c084f07489b035367c83ba38e143e21b1236ebe59202199cb6"],
