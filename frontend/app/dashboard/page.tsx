@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
-import { useBlockNumber, useChainId } from "wagmi"
+import { useBlockNumber } from "wagmi"
 import { ArrowUpRight, CircleCheck, Activity, Layers3, Boxes, Network } from "lucide-react"
 import { SiteNav } from "@/components/site-nav"
 import { SiteFooter } from "@/components/site-footer"
@@ -15,18 +16,62 @@ import {
   POOL_TOKENS,
   getHookIdentity,
 } from "@/lib/constants"
-import { useAllHookInfos, useRegistryStats, type HookInfo } from "@/hooks/useHookRegistry"
 import { fmtNumber } from "@/lib/utils"
 
-export default function DashboardPage() {
-  const { data: blockNumber } = useBlockNumber({ watch: true })
-  const chainId = useChainId()
-  const { infos, isLoading } = useAllHookInfos()
-  const { hookCount, poolCount } = useRegistryStats()
+type HookStat = {
+  hookAddress: string
+  name: string
+  description: string
+  version: string
+  deployer: string
+  deployedAt: number
+  isVerified: boolean
+  isActive: boolean
+  totalPoolsUsing: number
+  totalInteractions: number
+}
 
-  const totalInteractions = infos.reduce((s, h) => s + Number(h.totalInteractions), 0)
-  const verifiedCount = infos.filter((h) => h.isVerified).length
-  const activeCount = infos.filter((h) => h.isActive).length
+type StatsData = {
+  hookCount: number
+  poolCount: number
+  totalInteractions: number
+  hooks: HookStat[]
+}
+
+function useStats() {
+  const [data, setData] = useState<StatsData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const refetch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/stats', { next: { revalidate: 30 } })
+      if (res.ok) {
+        const json = await res.json()
+        if (!json.error) setData(json)
+      }
+    } catch {}
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    refetch()
+    const id = setInterval(refetch, 30_000)
+    return () => clearInterval(id)
+  }, [refetch])
+
+  return { data, loading }
+}
+
+export default function DashboardPage() {
+  const { data: blockNumber } = useBlockNumber({ watch: true, chainId: 196 })
+  const { data, loading } = useStats()
+
+  const hookCount   = data?.hookCount   ?? 0
+  const poolCount   = data?.poolCount   ?? 0
+  const totalInter  = data?.totalInteractions ?? 0
+  const hooks       = data?.hooks ?? []
+  const verifiedCount = hooks.filter((h) => h.isVerified).length
+  const activeCount   = hooks.filter((h) => h.isActive).length
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -43,17 +88,17 @@ export default function DashboardPage() {
                 Live <span className="display-italic">terminal.</span>
               </h1>
               <p className="mt-3 max-w-xl text-sm text-(--ink-2)">
-                Live on-chain state read directly from the HookRegistry and PoolManager on{" "}
-                <span className="mono text-(--ink)">X Layer</span>{" "}
-                via wagmi. Refreshes every 30 seconds.
+                Live on-chain state read directly from the HookRegistry on{" "}
+                <span className="mono text-(--ink)">X Layer</span>.{" "}
+                Refreshes every 30 seconds.
               </p>
             </div>
 
             <div className="col-span-12 md:col-span-5 flex md:justify-end gap-3 flex-wrap">
-              <Badge variant={isLoading ? "outline" : "gain"}>
-                {isLoading ? "Loading…" : "Connected"}
+              <Badge variant={loading ? "outline" : "gain"}>
+                {loading ? "Loading…" : "Live"}
               </Badge>
-              <Badge variant="outline">Chain {chainId}</Badge>
+              <Badge variant="outline">Chain 196</Badge>
               <Badge variant="outline">
                 Block #{blockNumber != null ? blockNumber.toString() : "—"}
               </Badge>
@@ -66,19 +111,19 @@ export default function DashboardPage() {
           <div className="mx-auto max-w-[1400px] grid grid-cols-2 md:grid-cols-4">
             <Kpi
               label="Hooks Deployed"
-              value={(hookCount != null ? Number(hookCount) : infos.length).toString().padStart(2, "0")}
+              value={hookCount.toString().padStart(2, "0")}
               sub={`${verifiedCount} verified · ${activeCount} active`}
               Icon={Layers3}
             />
             <Kpi
               label="Pools Registered"
-              value={(poolCount != null ? Number(poolCount) : 0).toString().padStart(2, "0")}
+              value={poolCount.toString().padStart(2, "0")}
               sub="Live from HookRegistry"
               Icon={Boxes}
             />
             <Kpi
               label="Interactions"
-              value={totalInteractions > 0 ? fmtNumber(totalInteractions) : "—"}
+              value={totalInter > 0 ? fmtNumber(totalInter) : "—"}
               sub="Aggregate across hooks"
               Icon={Activity}
             />
@@ -111,7 +156,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-(--rule) border border-(--rule)">
               {HOOK_ORDER.map((name) => {
                 const addr = HOOK_ADDRESSES[name as keyof typeof HOOK_ADDRESSES]
-                const live = infos.find((i) => i.name === name)
+                const live = hooks.find((h) => h.name === name)
                 return <HookCell key={name} name={name} address={addr} info={live} />
               })}
               {/* 6th cell — registry summary */}
@@ -267,7 +312,7 @@ function HookCell({
 }: {
   name: string
   address: `0x${string}`
-  info: HookInfo | undefined
+  info: HookStat | undefined
 }) {
   const id = getHookIdentity(name)
   if (!id) return null
@@ -316,9 +361,7 @@ function HookCell({
         <Stat
           tiny
           label="Status"
-          value={
-            info ? (info.isActive ? "Active" : "Idle") : "—"
-          }
+          value={info ? (info.isActive ? "Active" : "Idle") : "—"}
         />
       </div>
 
