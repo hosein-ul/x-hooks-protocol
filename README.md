@@ -5,7 +5,7 @@
 > tranching, sealed-bid batch auctions, and collateral-backed limit orders —
 > composed into a single registry and exposed through one PoolManager.
 
-**Live site:** [deploy-preview on Netlify](https://deploy-preview-6--x-hooks-protocol.netlify.app) · **Twitter:** [@XHooks\_protocol](https://x.com/XHooks_protocol)
+**Live site:** [xhooks-protocol.netlify.app](https://xhooks-protocol.netlify.app) · **Twitter:** [@XHooks\_protocol](https://x.com/XHooks_protocol)
 
 ---
 
@@ -189,6 +189,18 @@ contract, and no admin path to drain.
 | Demo token XHKB  | `0x8199bFf13918c270ced3df9776862663b7c952e3` |
 
 Browse any address on **OKLink:** `https://www.oklink.com/x-layer/address/<addr>`
+
+### V4 Pool IDs
+
+| Hook | Pool ID (bytes32) |
+|------|-------------------|
+| OFAHook  | `0xd2dbfc52093172c084f07489b035367c83ba38e143e21b1236ebe59202199cb6` |
+| BCSHook  | `0x1202c5ade749da93a0f97449d92bc8bfd1db74cc11b49e2afc9051ca79964976` |
+| PLTHook  | `0x57dcbf83710828f3d530daf53725c0faacc970afd0cb23e1965e21d3d5326f06` |
+| SUBAHook | `0x600edb115d98e91142105e77f29eb1f87c05dbfa0bd7c0b800f62847feb746fa` |
+| CALHook  | `0xa3dfc4b76570d536daa1b9154e0ffeebb530e1a637d53ea9debb5a8c0ac634fa` |
+
+Pool IDs are keccak256 hashes of the PoolKey struct (token0, token1, fee=3000, tickSpacing=60, hooks=hookAddress). All pools are XHKB/XHKA pairs initialized 1:1.
 
 A live, machine-readable copy is committed at
 [`x-hooks-protocol/deployments/xlayer-mainnet.json`](x-hooks-protocol/deployments/xlayer-mainnet.json),
