@@ -5,7 +5,7 @@
 > tranching, sealed-bid batch auctions, and collateral-backed limit orders —
 > composed into a single registry and exposed through one PoolManager.
 
-**Live site:** [xhooks-protocol.netlify.app](https://xhooks-protocol.netlify.app) · **Twitter:** [@XHooks\_protocol](https://x.com/XHooks_protocol)
+**Live site:** [xhooks-protocol.netlify.app](https://xhooks-protocol.netlify.app) · **Project:** [@XHooks\_protocol](https://x.com/XHooks_protocol) · **Author:** [@andy1eth](https://x.com/andy1eth)
 
 ---
 
@@ -331,23 +331,33 @@ hashes are recorded in `deployments/xlayer-mainnet.json` under
 
 ## Verifying contracts on OKLink
 
-OKLink's verification form has a few non-default settings that **must** be set
-correctly or verification will fail. For every contract use:
+✅ **All 6 contracts are verified on X Layer** — the green "Contract source
+code verified" badge is live on each address's `#code` tab.
+
+The contracts compile with `viaIR: true`. OKLink's **Single file** verifier
+silently ignores the "Via IR" toggle and fails with *"Stack too deep"*, so use
+**Standard JSON Input** instead — it passes every compiler setting exactly:
 
 | Field | Value |
 |---|---|
-| Compiler type | Solidity (Single file) |
+| Compiler type | **Solidity (Standard JSON Input)** |
 | Compiler version | `v0.8.26+commit.8a97fa7a` |
 | Open Source License | MIT |
-| **Optimization** | **Yes** (form defaults to No) |
-| Optimization runs | `200` |
-| **Via IR** | **Yes** (form defaults to No) |
-| **EVM Version** | `cancun` (form defaults to "default") |
-| Source code | paste the matching file from `x-hooks-protocol/verification/*_flat.sol` |
+| JSON file | upload the matching `x-hooks-protocol/verification/*_standard_json.json` |
 | Constructor args | leave the pre-filled ABI-encoded values |
 
-Repeat for each of the 6 contracts (HookRegistry, OFAHook, BCSHook, PLTHook,
-SUBAHook, CALHook).
+The Standard JSON files already encode `optimizer.enabled = true`,
+`optimizer.runs = 200`, `viaIR = true`, and `evmVersion = cancun`, so there are
+no toggles to get wrong. Repeat for each of the 6 contracts (HookRegistry,
+OFAHook, BCSHook, PLTHook, SUBAHook, CALHook). Full step-by-step in
+[`x-hooks-protocol/verification/VERIFY.md`](x-hooks-protocol/verification/VERIFY.md).
+
+> **Note on the V4 pools:** the 5 pools are *not* separate contracts and have
+> nothing to verify. In Uniswap V4 every pool lives inside the single
+> `PoolManager` contract and is identified by its **Pool ID** (a `bytes32`
+> keccak256 hash of the PoolKey — see the table above), not by its own address.
+> Verifying the `PoolManager` (an Uniswap-deployed contract) and the 5 hooks
+> covers all on-chain code paths the pools execute.
 
 ---
 
@@ -386,4 +396,5 @@ Mono** (data). One signal colour — oxide orange — applied sparingly. Two the
 [MIT](LICENSE)
 
 Built with care for the **OKX Build-X Hackathon, 2026**.
-Follow the project on [Twitter / X](https://x.com/XHooks_protocol).
+Follow the project on [Twitter / X](https://x.com/XHooks_protocol)
+and the author [@andy1eth](https://x.com/andy1eth).

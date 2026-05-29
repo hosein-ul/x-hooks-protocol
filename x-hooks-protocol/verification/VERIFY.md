@@ -2,7 +2,8 @@
 
 Compiler: Solidity 0.8.26  
 Optimizer: enabled, 200 runs  
-via_ir: true  
+viaIR: true  
+EVM version: cancun  
 Deployed at block: 61221454  
 Deployer: `0xC0d1AC70A3A32BceA4a124e65eb22eb5f0d0Adc2`
 
@@ -32,34 +33,49 @@ Fee tier: 3000 (0.3%) · tickSpacing: 60 · Initial sqrtPriceX96: 1:1
 | PLTHook pool | 0xb4313ADd866F4E30F22751F9Ccf2C526839eda40 |
 | SUBAHook pool| 0xD8b747E0e895eD02FbDac6378A9548368374d088 |
 
-## Manual Verification on OKLink
+---
 
-For each contract:
+## Verification on OKLink — Standard JSON Input (RECOMMENDED)
+
+OKLink's SingleFile verifier does not properly apply `viaIR` even when
+"Based on IR: Yes" is checked — this causes the "Stack too deep" error.
+Use **Standard JSON Input** instead, which correctly passes all settings.
+
+### Steps (same for every contract)
 
 1. Go to `https://www.oklink.com/x-layer/address/<ADDRESS>#code`
 2. Click **"Verify and Publish"**
-3. Select:
-   - Compiler: `v0.8.26`
-   - Optimization: **Yes**, 200 runs
-   - EVM version: `paris`
-4. Paste the flattened source from `<ContractName>_flat.sol`
-5. No constructor args for `HookRegistry`
+3. Select **Compiler Type: Solidity (Standard JSON Input)**
+4. Select Compiler Version: `v0.8.26+commit.8a97fa7a`
+5. Upload the corresponding `<ContractName>_standard_json.json` file from this folder
+6. Paste the ABI-encoded constructor arguments (see table below)
+7. Submit
 
-Constructor args (ABI-encoded) for hooks — use forge to generate:
-```bash
-# OFAHook
-cast abi-encode "constructor(address,uint256,uint256)" \
-  0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32 1000000000000000000000 50
+### Constructor Arguments (ABI-encoded)
 
-# BCSHook / PLTHook / CALHook
-cast abi-encode "constructor(address)" \
-  0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32
+| Contract     | ABI-encoded constructor args |
+|-------------|------------------------------|
+| HookRegistry | *(none)* |
+| OFAHook      | `cast abi-encode "constructor(address,uint256,uint256)" 0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32 1000000000000000000000 50` |
+| BCSHook      | `cast abi-encode "constructor(address)" 0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+| PLTHook      | `cast abi-encode "constructor(address)" 0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+| CALHook      | `cast abi-encode "constructor(address)" 0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32` |
+| SUBAHook     | `cast abi-encode "constructor(address,uint256,address)" 0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32 50 0xC0d1AC70A3A32BceA4a124e65eb22eb5f0d0Adc2` |
 
-# SUBAHook
-cast abi-encode "constructor(address,uint256,address)" \
-  0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32 50 \
-  0xC0d1AC70A3A32BceA4a124e65eb22eb5f0d0Adc2
-```
+Run the `cast abi-encode` command locally to get the hex string, then paste it in OKLink.
+
+### Standard JSON files in this folder
+
+| File | Contract |
+|------|----------|
+| `OFAHook_standard_json.json` | OFAHook |
+| `BCSHook_standard_json.json` | BCSHook |
+| `PLTHook_standard_json.json` | PLTHook |
+| `SUBAHook_standard_json.json` | SUBAHook |
+| `CALHook_standard_json.json` | CALHook |
+| `HookRegistry_standard_json.json` | HookRegistry |
+
+---
 
 ## OKLink API Verification (if you have API key)
 
