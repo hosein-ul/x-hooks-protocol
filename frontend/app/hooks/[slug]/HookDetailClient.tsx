@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { AddressBlock } from "@/components/address-block"
 import { fmtNumber } from "@/lib/utils"
+import { KineticChars, KineticWords, KineticContainer } from "@/components/kinetic-text"
 
 type Props = {
   address: `0x${string}`
@@ -86,13 +87,18 @@ export function HookDetailClient({ address, hint }: Props) {
                 )}
               </div>
 
-              <h1 className="display text-[clamp(2.75rem,8vw,7.5rem)] leading-[0.92] tracking-[-0.04em]">
-                {shortname}<span className="display-italic">.</span>
-              </h1>
+              <KineticContainer staggerChildren={0.04}>
+                <h1 className="display text-[clamp(2.75rem,8vw,7.5rem)] leading-[0.92] tracking-[-0.04em]">
+                  <KineticChars text={shortname} />
+                  <span className="display-italic">.</span>
+                </h1>
+              </KineticContainer>
 
-              <p className="mt-8 max-w-3xl text-xl md:text-2xl leading-snug text-(--ink-2) display">
-                {headline}
-              </p>
+              <KineticContainer staggerChildren={0.04} delayChildren={0.3}>
+                <p className="mt-8 max-w-3xl text-xl md:text-2xl leading-snug text-(--ink-2) display">
+                  <KineticWords text={headline} />
+                </p>
+              </KineticContainer>
 
               <p className="mt-4 max-w-3xl text-base leading-relaxed text-(--muted)">
                 {tagline}
