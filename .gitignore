@@ -3,4 +3,7 @@ x-hooks-protocol/contracts/cache/
 x-hooks-protocol/contracts/out/
 x-hooks-protocol/contracts/broadcast/
 bg-screenshots/
+bg-images/
 screenshot-bg.js
+download-images.sh
+frontend/public/bg/
