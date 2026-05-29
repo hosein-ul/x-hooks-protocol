@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/site-nav"
 import { SiteFooter } from "@/components/site-footer"
 import { AddressBlock } from "@/components/address-block"
 import { Badge } from "@/components/ui/badge"
+import { KineticChars, KineticContainer } from "@/components/kinetic-text"
 import {
   HOOK_ORDER,
   HOOK_ADDRESSES,
@@ -22,15 +23,18 @@ export default function ContractsPage() {
 
       <main className="flex-1 bg-(--surface-0)">
 
-        {/* ── Header strip ── */}
+        {/* Header strip */}
         <div className="border-b border-(--rule)">
           <div className="mx-auto max-w-[1400px] px-6 py-12 grid grid-cols-12 gap-6 items-end">
             <div className="col-span-12 md:col-span-8">
               <div className="eyebrow mb-3">Manifest</div>
-              <h1 className="display text-5xl md:text-6xl leading-[0.95]">
-                Verifiable<br />
-                <span className="display-italic">contract registry.</span>
-              </h1>
+              <KineticContainer staggerChildren={0.025}>
+                <h1 className="display text-5xl md:text-6xl leading-[0.95]">
+                  <KineticChars text="Verifiable" />
+                  <br />
+                  <KineticChars text="contract registry." className="display-italic" baseDelay={11} />
+                </h1>
+              </KineticContainer>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-(--ink-2)">
                 Every contract deployed by the X Hooks Protocol on X Layer mainnet.
                 Flattened source files are checked into the monorepo for byte-exact
@@ -45,13 +49,12 @@ export default function ContractsPage() {
           </div>
         </div>
 
-        {/* ── Registry table ── */}
+        {/* Registry table */}
         <section className="border-b border-(--rule)">
           <div className="mx-auto max-w-[1400px] px-6 py-12">
             <SectionHeader number="01" title="Protocol contracts" />
 
             <div className="border border-(--rule)">
-              {/* HookRegistry row */}
               <ContractRow
                 ordinal="R."
                 category="Registry"
@@ -91,7 +94,7 @@ export default function ContractsPage() {
           </div>
         </section>
 
-        {/* ── Pools section ── */}
+        {/* Pools section */}
         <section className="border-b border-(--rule)">
           <div className="mx-auto max-w-[1400px] px-6 py-12">
             <SectionHeader number="02" title="V4 Pools" />
@@ -127,7 +130,6 @@ export default function ContractsPage() {
               />
             </div>
 
-            {/* Pool IDs subsection */}
             <div className="mt-8">
               <h3 className="display text-2xl md:text-3xl mb-2">
                 Pool IDs{" "}
@@ -168,7 +170,6 @@ export default function ContractsPage() {
                     key={hook}
                     className="grid grid-cols-12 items-center gap-x-4 gap-y-2 px-5 py-4 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
                   >
-                    {/* Hook name linking to detail page */}
                     <div className="col-span-12 md:col-span-2">
                       <Link
                         href={`/hooks/${hook.toLowerCase()}`}
@@ -178,12 +179,10 @@ export default function ContractsPage() {
                       </Link>
                     </div>
 
-                    {/* Full bytes32 ID */}
                     <div className="col-span-10 md:col-span-9 mono text-xs text-(--ink-2) break-all">
                       {id}
                     </div>
 
-                    {/* Link to PoolManager on OKLink */}
                     <div className="col-span-2 md:col-span-1 flex justify-end">
                       <a
                         href="https://www.oklink.com/x-layer/address/0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32"
@@ -208,7 +207,7 @@ export default function ContractsPage() {
           </div>
         </section>
 
-        {/* ── Verification guide ── */}
+        {/* Verification guide */}
         <section>
           <div className="mx-auto max-w-[1400px] px-6 py-16 grid grid-cols-12 gap-8">
             <div className="col-span-12 md:col-span-3">
@@ -284,12 +283,10 @@ function ContractRow({
 }) {
   return (
     <div className="grid grid-cols-12 items-start md:items-center gap-x-4 gap-y-3 px-5 py-5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors">
-      {/* Ordinal */}
       <div className="col-span-2 md:col-span-1 display text-2xl text-(--muted) leading-none">
         {ordinal}
       </div>
 
-      {/* Name + tag */}
       <div className="col-span-10 md:col-span-5">
         <div className="flex items-baseline gap-3 flex-wrap">
           {href ? (
@@ -314,12 +311,10 @@ function ContractRow({
         <div className="text-sm text-(--ink-2) mt-1">{tagline}</div>
       </div>
 
-      {/* Address */}
       <div className="col-span-10 md:col-span-5 mono text-xs text-(--ink-2) break-all">
         {address}
       </div>
 
-      {/* External link */}
       <div className="col-span-2 md:col-span-1 flex justify-end">
         <a
           href={`${EXPLORER_BASE}${address}`}
