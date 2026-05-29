@@ -101,6 +101,13 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button asChild size="lg" variant="signal">
+                      <Link href="/demo">
+                        Hook Simulator <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                     <Button asChild size="lg">
                       <Link href="/dashboard">
                         Open Terminal <ArrowRight className="h-3.5 w-3.5" />
