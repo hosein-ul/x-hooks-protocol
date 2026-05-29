@@ -1,6 +1,10 @@
 export const HOOK_REGISTRY_ADDRESS =
   (process.env.NEXT_PUBLIC_HOOK_REGISTRY as `0x${string}`) ??
-  '0x0000000000000000000000000000000000000000'
+  // Real deployed HookRegistry on X Layer (public address). Hardcoded as the
+  // fallback so server-side reads work even when NEXT_PUBLIC_* env vars don't
+  // reach the build — previously this was the zero address, which made every
+  // contract call return "0x" (no data) on Netlify.
+  '0xeBc902Cee74345DD23f63E2f132f81E5fBE1D56D'
 
 export const HOOK_REGISTRY_ABI = [
   {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const X_LAYER_RPC_URLS = [
   'https://rpc.xlayer.tech',
   'https://xlayerrpc.okx.com',
-  'https://x-layer.drpc.org',
+  'https://xlayer.drpc.org',
 ]
 
 export async function POST(req: NextRequest) {

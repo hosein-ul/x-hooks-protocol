@@ -2,8 +2,21 @@
   command   = "npm run build"
   publish   = ".next"
 
+# When the root netlify.toml sets base = "frontend", Netlify reads THIS file
+# for build config — so the NEXT_PUBLIC_* vars must live here, not only in the
+# root toml, or they never reach the build and on-chain reads fall back to
+# defaults. (The code also hardcodes safe public-address fallbacks as a belt-
+# and-suspenders, so the dashboard works even if these go missing.)
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION                  = "22"
+  NEXT_PUBLIC_CHAIN_ID          = "196"
+  NEXT_PUBLIC_WALLETCONNECT_ID  = "demo"
+  NEXT_PUBLIC_HOOK_REGISTRY     = "0xeBc902Cee74345DD23f63E2f132f81E5fBE1D56D"
+  NEXT_PUBLIC_OFAH              = "0x955523a8eD7999e05015bC6F7b854D447717c088"
+  NEXT_PUBLIC_BCSH              = "0xb7128F16104e6DD0DCe6f89dfBf733440E7F8080"
+  NEXT_PUBLIC_PLTH              = "0xb4313ADd866F4E30F22751F9Ccf2C526839eda40"
+  NEXT_PUBLIC_SUBAH             = "0xD8b747E0e895eD02FbDac6378A9548368374d088"
+  NEXT_PUBLIC_CALH              = "0x3F26eF2279a0FfbBdC8270198106633008d78088"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
