@@ -2,3 +2,5 @@ x-hooks-protocol/contracts/lib/
 x-hooks-protocol/contracts/cache/
 x-hooks-protocol/contracts/out/
 x-hooks-protocol/contracts/broadcast/
+bg-screenshots/
+screenshot-bg.js
