@@ -47,7 +47,7 @@ export default function LandingPage() {
 
         {/* HERO — editorial masthead */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-12 md:pt-24 md:pb-20">
+          <div className="mx-auto max-w-[1400px] px-6 pt-6 pb-12 md:pt-10 md:pb-20">
             {/* Eyebrow row */}
             <div className="flex flex-wrap items-baseline gap-4 mb-10">
               <span className="eyebrow">Vol. I · No. 01</span>
