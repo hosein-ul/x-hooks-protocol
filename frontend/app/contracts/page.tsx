@@ -126,6 +126,85 @@ export default function ContractsPage() {
                 address={POOL_TOKENS.token1}
               />
             </div>
+
+            {/* Pool IDs subsection */}
+            <div className="mt-8">
+              <h3 className="display text-2xl md:text-3xl mb-2">
+                Pool IDs{" "}
+                <span className="display-italic text-(--muted)">(bytes32)</span>
+              </h3>
+              <p className="text-sm text-(--ink-2) max-w-2xl mb-5">
+                In Uniswap V4 all pools live inside the PoolManager singleton.
+                Each pool is identified by a{" "}
+                <span className="mono text-(--ink)">bytes32</span> keccak256
+                hash of its PoolKey (token0, token1, fee, tickSpacing, hooks).
+                These IDs are used to query on-chain state.
+              </p>
+
+              <div className="border border-(--rule)">
+                {[
+                  {
+                    hook: "OFAHook",
+                    id: "0xd2dbfc52093172c084f07489b035367c83ba38e143e21b1236ebe59202199cb6",
+                  },
+                  {
+                    hook: "BCSHook",
+                    id: "0x1202c5ade749da93a0f97449d92bc8bfd1db74cc11b49e2afc9051ca79964976",
+                  },
+                  {
+                    hook: "PLTHook",
+                    id: "0x57dcbf83710828f3d530daf53725c0faacc970afd0cb23e1965e21d3d5326f06",
+                  },
+                  {
+                    hook: "SUBAHook",
+                    id: "0x600edb115d98e91142105e77f29eb1f87c05dbfa0bd7c0b800f62847feb746fa",
+                  },
+                  {
+                    hook: "CALHook",
+                    id: "0xa3dfc4b76570d536daa1b9154e0ffeebb530e1a637d53ea9debb5a8c0ac634fa",
+                  },
+                ].map(({ hook, id }) => (
+                  <div
+                    key={hook}
+                    className="grid grid-cols-12 items-center gap-x-4 gap-y-2 px-5 py-4 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
+                  >
+                    {/* Hook name linking to detail page */}
+                    <div className="col-span-12 md:col-span-2">
+                      <Link
+                        href={`/hooks/${hook.toLowerCase()}`}
+                        className="text-sm font-medium text-(--ink) link-underline"
+                      >
+                        {hook}
+                      </Link>
+                    </div>
+
+                    {/* Full bytes32 ID */}
+                    <div className="col-span-10 md:col-span-9 mono text-xs text-(--ink-2) break-all">
+                      {id}
+                    </div>
+
+                    {/* Link to PoolManager on OKLink */}
+                    <div className="col-span-2 md:col-span-1 flex justify-end">
+                      <a
+                        href="https://www.oklink.com/x-layer/address/0x360E68faCcca8cA495c1B759Fd9EEe466db9FB32"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="View PoolManager on OKLink"
+                        className="text-(--muted) hover:text-(--ink)"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs text-(--muted)">
+                <Network className="inline h-3.5 w-3.5 mr-1 align-[-2px]" />
+                Each hook name links to its detail page. The external link opens
+                the PoolManager singleton on OKLink.
+              </p>
+            </div>
           </div>
         </section>
 

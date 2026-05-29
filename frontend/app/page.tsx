@@ -19,6 +19,16 @@ import {
   getHookIdentity,
 } from "@/lib/constants"
 import { useAllHookInfos, useRegistryStats } from "@/hooks/useHookRegistry"
+import { motion, type Variants } from "framer-motion"
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+}
+const itemVariants: Variants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+}
 
 export default function LandingPage() {
   const { data: blockNumber } = useBlockNumber({ watch: true })
@@ -37,7 +47,7 @@ export default function LandingPage() {
 
         {/* HERO — editorial masthead */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-12 md:pt-24 md:pb-20">
+          <div className="mx-auto max-w-[1400px] px-6 pt-6 pb-12 md:pt-10 md:pb-20">
             {/* Eyebrow row */}
             <div className="flex flex-wrap items-baseline gap-4 mb-10">
               <span className="eyebrow">Vol. I · No. 01</span>
@@ -53,10 +63,31 @@ export default function LandingPage() {
             </div>
 
             {/* Massive editorial title */}
-            <h1 className="display text-[clamp(3rem,11vw,9.5rem)] leading-[0.88] tracking-[-0.04em]">
-              The hook<br />
-              <span className="display-italic">primitive</span> press.
-            </h1>
+            <motion.h1 className="display text-[clamp(3rem,11vw,9.5rem)] leading-[0.88] tracking-[-0.04em]">
+              {["The", "hook"].map((word, i) => (
+                <motion.span
+                  key={word + i}
+                  className="inline-block mr-[0.22em]"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: i * 0.1 }}
+                >
+                  {word}
+                </motion.span>
+              ))}
+              <br />
+              {[<span key="primitive" className="display-italic">primitive</span>, "press."].map((word, i) => (
+                <motion.span
+                  key={i}
+                  className="inline-block mr-[0.18em]"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: (2 + i) * 0.1 }}
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </motion.h1>
 
             {/* Subhead + CTAs */}
             <div className="mt-12 grid grid-cols-12 gap-8">
@@ -69,21 +100,30 @@ export default function LandingPage() {
                   composed into a single registry and exposed through one PoolManager.
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <Button asChild size="lg">
-                    <Link href="/dashboard">
-                      Open Terminal <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                  <Button asChild size="lg" variant="outline">
-                    <Link href="/contracts">
-                      Verifiable Contracts
-                    </Link>
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button asChild size="lg">
+                      <Link href="/dashboard">
+                        Open Terminal <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Button asChild size="lg" variant="outline">
+                      <Link href="/contracts">
+                        Verifiable Contracts
+                      </Link>
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
 
               {/* Stats column */}
-              <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
+              <motion.div
+                className="col-span-12 md:col-span-5 grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+              >
                 <Stat label="Hooks Deployed" value={liveHookCount.toString().padStart(2, "0")} />
                 <Stat label="Pools Registered" value={livePoolCount.toString().padStart(2, "0")} />
                 <Stat
@@ -91,7 +131,7 @@ export default function LandingPage() {
                   value={totalInteractions > 0 ? totalInteractions.toLocaleString() : "—"}
                 />
                 <Stat label="Chain" value="X-LAYER" sub="196" />
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -112,7 +152,13 @@ export default function LandingPage() {
 
         {/* SECTION — swap flow */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-16">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-16"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="grid grid-cols-12 gap-8 mb-10">
               <div className="col-span-12 md:col-span-3">
                 <div className="eyebrow mb-3">Figure 01</div>
@@ -150,12 +196,18 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* SECTION — taxonomy / table of contents */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-2">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 pt-16 pb-2"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="grid grid-cols-12 gap-8 mb-8">
               <div className="col-span-12 md:col-span-3">
                 <div className="eyebrow mb-3">Index</div>
@@ -171,27 +223,40 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="border-y border-(--rule)">
+          <motion.div
+            className="border-y border-(--rule)"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+          >
             {HOOK_ORDER.map((name) => {
               const live = infos.find((i) => i.name === name)
               return (
-                <HookRow
-                  key={name}
-                  name={name}
-                  address={HOOK_ADDRESSES[name as keyof typeof HOOK_ADDRESSES]}
-                  pools={live?.totalPoolsUsing}
-                  interactions={live?.totalInteractions}
-                />
+                <motion.div key={name} variants={itemVariants}>
+                  <HookRow
+                    name={name}
+                    address={HOOK_ADDRESSES[name as keyof typeof HOOK_ADDRESSES]}
+                    pools={live?.totalPoolsUsing}
+                    interactions={live?.totalInteractions}
+                  />
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         </section>
 
         {/* SECTION — DEEP DIVE: every hook explained in depth */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-20">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-20"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="grid grid-cols-12 gap-8 mb-12">
               <div className="col-span-12 md:col-span-3">
                 <div className="eyebrow mb-3">Field guide</div>
@@ -230,12 +295,18 @@ export default function LandingPage() {
                 )
               })}
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* SECTION — ABOUT */}
         <section className="border-b border-(--rule) bg-(--surface-1)">
-          <div className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="col-span-12 md:col-span-3">
               <div className="eyebrow mb-3">About</div>
               <h2 className="display text-4xl md:text-5xl leading-[0.95]">
@@ -303,12 +374,18 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* SECTION — FAQ */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="col-span-12 md:col-span-3">
               <div className="eyebrow mb-3">F·A·Q</div>
               <h2 className="display text-4xl md:text-5xl leading-[0.95]">
@@ -326,12 +403,18 @@ export default function LandingPage() {
                 ))}
               </dl>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* SECTION — colophon / architecture */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="col-span-12 md:col-span-3">
               <div className="eyebrow mb-3">Colophon</div>
               <h2 className="display text-4xl md:text-5xl leading-[0.95]">
@@ -371,7 +454,62 @@ export default function LandingPage() {
                 (SUBA epoch settlement) are role-scoped per pool, not global.
               </Note>
             </div>
-          </div>
+          </motion.div>
+        </section>
+
+        {/* SECTION — on-chain manifest strip */}
+        <section className="border-b border-(--rule)">
+          <motion.div
+            className="mx-auto max-w-[1400px] px-6 py-12"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+              <div>
+                <div className="eyebrow mb-2">On-Chain</div>
+                <h2 className="display text-3xl md:text-4xl">
+                  Contracts &amp; <span className="display-italic">pool IDs.</span>
+                </h2>
+              </div>
+              <Link
+                href="/contracts"
+                className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-(--muted) hover:text-(--ink)"
+              >
+                Full manifest <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {/* Pool ID table */}
+            <div className="border border-(--rule) mb-6">
+              {([
+                ["OFAHook",  "0xd2dbfc52093172c084f07489b035367c83ba38e143e21b1236ebe59202199cb6"],
+                ["BCSHook",  "0x1202c5ade749da93a0f97449d92bc8bfd1db74cc11b49e2afc9051ca79964976"],
+                ["PLTHook",  "0x57dcbf83710828f3d530daf53725c0faacc970afd0cb23e1965e21d3d5326f06"],
+                ["SUBAHook", "0x600edb115d98e91142105e77f29eb1f87c05dbfa0bd7c0b800f62847feb746fa"],
+                ["CALHook",  "0xa3dfc4b76570d536daa1b9154e0ffeebb530e1a637d53ea9debb5a8c0ac634fa"],
+              ] as [string, string][]).map(([name, poolId]) => (
+                <Link
+                  key={name}
+                  href={`/hooks/${name.toLowerCase()}`}
+                  className="grid grid-cols-12 items-center gap-x-4 px-5 py-3.5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
+                >
+                  <div className="col-span-3 md:col-span-2 text-sm font-medium text-(--ink)">{name}</div>
+                  <div className="col-span-8 md:col-span-9 font-mono text-[11px] text-(--ink-2) break-all leading-snug">{poolId}</div>
+                  <div className="col-span-1 flex justify-end">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-(--muted)" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <p className="text-xs font-mono text-(--muted) uppercase tracking-[0.14em]">
+              Pool ID = keccak256(PoolKey) · XHKB / XHKA · fee 3000 · tickSpacing 60 ·{" "}
+              <a href={`https://www.oklink.com/x-layer/address/${POOL_MANAGER}`} target="_blank" rel="noopener noreferrer" className="hover:text-(--ink) link-underline">
+                PoolManager on OKLink ↗
+              </a>
+            </p>
+          </motion.div>
         </section>
 
         {/* SECTION — closing CTA */}
