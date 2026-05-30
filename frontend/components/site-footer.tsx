@@ -70,6 +70,16 @@ export function SiteFooter() {
                   Twitter · @XHooks_protocol
                 </a>
               </li>
+              <li>
+                <a
+                  href={SOCIAL_LINKS.personalTwitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-(--ink-2) hover:text-(--ink) link-underline"
+                >
+                  Twitter · @andy1eth
+                </a>
+              </li>
             </ul>
           </div>
 
