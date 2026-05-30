@@ -8,7 +8,7 @@ import { HookSelector } from "@/components/hook-simulator/HookSelector"
 import { SwapForm } from "@/components/hook-simulator/SwapForm"
 import { ExecutionTimeline } from "@/components/hook-simulator/ExecutionTimeline"
 import { ResultPanel } from "@/components/hook-simulator/ResultPanel"
-import { simulateSwap, type HookName, type SimResult } from "@/lib/simulation"
+import { simulateSwap, type HookName, type SimResult, type ExecStep } from "@/lib/simulation"
 import { getHookIdentity } from "@/lib/constants"
 
 type Direction = "zeroForOne" | "oneForZero"
@@ -73,6 +73,14 @@ function WordReveal({ text, className }: { text: string; className?: string }) {
   )
 }
 
+const PENDING_STEPS: ExecStep[] = [
+  { id: "user",   label: "User",          sublabel: "Swap initiated",         status: "PENDING", note: null },
+  { id: "before", label: "beforeSwap",    sublabel: "Hook intercept check",   status: "PENDING", note: null },
+  { id: "amm",    label: "Core AMM",      sublabel: "Constant-product curve", status: "PENDING", note: null },
+  { id: "after",  label: "afterSwap",     sublabel: "Hook post-swap check",   status: "PENDING", note: null },
+  { id: "settle", label: "Settle / Take", sublabel: "ERC-6909 settlement",    status: "PENDING", note: null },
+]
+
 const sectionNumVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
@@ -102,164 +110,133 @@ export default function DemoPage() {
     setRunning(false)
   }
 
-  function handleFlip() {
-    setDirection((d) => d === "zeroForOne" ? "oneForZero" : "zeroForOne")
-    setResult(null)
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <SiteNav />
 
-      <main className="flex-1">
-        <section className="border-b border-(--rule) overflow-hidden">
-          <div className="mx-auto max-w-[1400px] px-4 pt-6 pb-10 md:px-6 md:pt-8 md:pb-12">
-            <motion.div
-              className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-6 md:mb-8"
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-            >
-              <motion.span className="eyebrow" variants={fadeUpVariants}>Hook Simulator</motion.span>
-              <motion.span className="eyebrow text-(--muted)" variants={fadeUpVariants}>
-                Frontend simulation · No wallet required
-              </motion.span>
-            </motion.div>
-
-            <motion.h1
-              className="display text-[clamp(2rem,7.5vw,5.5rem)] leading-[0.88] tracking-[-0.03em] mb-5 md:mb-6"
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
-            >
-              <KineticText text="See what " baseDelay={0} />
-              <KineticText text="your swap" className="display-italic" baseDelay={9} />
-              <br />
-              <KineticText text="triggers on-chain." baseDelay={19} />
-            </motion.h1>
-
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.045, delayChildren: 0.6 } } }}
-            >
-              <WordReveal
-                text="Pick a hook, enter a swap amount, and watch the Uniswap V4 execution lifecycle animate step by step — showing exactly which callbacks fire, what each hook does, and what you receive."
-                className="max-w-2xl text-base text-(--ink-2) leading-relaxed"
-              />
-            </motion.div>
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-6 md:py-10 flex flex-col gap-10 md:gap-12">
-
-          <motion.section
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+      <main className="flex-1 bg-(--surface-0)">
+        {/* PAGE HEADER */}
+        <motion.div
+          className="border-b border-(--rule) px-4 py-8 md:px-8 md:py-12 max-w-[1400px] mx-auto"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.06 } },
+          }}
+        >
+          <motion.div variants={fadeUpVariants} className="eyebrow mb-4">
+            Hook Simulator
+          </motion.div>
+          <h1
+            className="display text-[clamp(2.8rem,9vw,7.5rem)] leading-[0.88] tracking-[-0.035em] mb-5"
+            aria-label="Simulate any swap"
           >
-            <motion.div className="flex items-center gap-4 mb-5" variants={fadeUpVariants}>
-              <motion.span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
+            <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.015, delayChildren: 0.1 } } }}>
+              <KineticText text="Simulate" className="text-(--ink)" />
+              {" "}
+              <KineticText text="any" className="display-italic text-(--signal)" baseDelay={8} />
+              {" "}
+              <KineticText text="swap." className="text-(--ink)" baseDelay={11} />
+            </motion.div>
+          </h1>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05, delayChildren: 0.35 } } }}
+          >
+            <WordReveal
+              text="Pick a hook, enter an amount, and watch the V4 execution pipeline animate step-by-step — no wallet, no gas, no real transaction."
+              className="text-base md:text-lg text-(--ink-2) leading-relaxed max-w-2xl"
+            />
+          </motion.div>
+        </motion.div>
+
+        <div className="max-w-[1400px] mx-auto px-4 py-8 md:px-8 md:py-12 space-y-12 md:space-y-16">
+
+          {/* SECTION 01 — Hook selector */}
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+          >
+            <div className="flex items-center gap-4 mb-5">
+              <motion.span
+                className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums"
+                initial="hidden"
+                animate="visible"
+                variants={sectionNumVariants}
+              >
                 01
               </motion.span>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Choose a Hook / Pool</p>
-                <p className="text-xs text-(--muted) mt-0.5">Each hook runs on the same XHKB/XHKA pool — different execution behavior</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Select a hook</p>
+                <p className="text-xs text-(--muted) mt-0.5">Each hook intercepts the swap pipeline differently</p>
               </div>
-            </motion.div>
-            <motion.div variants={fadeUpVariants}>
-              <HookSelector selected={selectedHook} onChange={handleHookChange} />
-            </motion.div>
+            </div>
+            <HookSelector selected={selectedHook} onChange={handleHookChange} />
           </motion.section>
 
+          {/* SECTION 02 — Swap form */}
           <motion.section
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
           >
-            <motion.div className="flex items-center gap-4 mb-5" variants={fadeUpVariants}>
-              <motion.span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
-                02
-              </motion.span>
+            <div className="flex items-center gap-4 mb-5">
+              <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">02</span>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Configure Swap</p>
-                <p className="text-xs text-(--muted) mt-0.5">
-                  {hookId && `${hookId.shortname} · ${hookId.type} hook`}
-                  {selectedHook === "OFAHook" && " — try amounts below and above 50 to see auction trigger"}
-                  {selectedHook === "SUBAHook" && " — all swaps are buffered regardless of size"}
-                  {selectedHook === "PLTHook" && " — swap runs normally; fee split shown in result"}
-                </p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Configure swap</p>
+                <p className="text-xs text-(--muted) mt-0.5">Set amount and direction — pool reserves are 10,000 XHKB / 10,000 XHKA</p>
               </div>
-            </motion.div>
-            <motion.div className="max-w-lg mx-auto" variants={fadeUpVariants}>
+            </div>
+            <div className="flex justify-center">
               <SwapForm
                 hookName={selectedHook}
                 amount={amount}
                 direction={direction}
                 running={running}
-                onAmountChange={(v) => { setAmount(v); setResult(null) }}
-                onFlip={handleFlip}
+                onAmountChange={setAmount}
+                onFlip={() => setDirection(d => d === "zeroForOne" ? "oneForZero" : "zeroForOne")}
                 onSimulate={handleSimulate}
               />
-            </motion.div>
+            </div>
           </motion.section>
 
+          {/* SECTION 03 — Execution timeline */}
           {(running || result) && (
-            <section>
-              <motion.div
-                className="flex items-center gap-4 mb-5"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-              >
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <div className="flex items-center gap-4 mb-5">
                 <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">03</span>
                 <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">V4 Execution Lifecycle</p>
-                  <p className="text-xs text-(--muted) mt-0.5">Step-by-step callback trace — green = FIRED · muted = SKIP · orange = BUFFERED / PENDING</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Execution pipeline</p>
+                  <p className="text-xs text-(--muted) mt-0.5">V4 hook lifecycle — phase by phase</p>
                 </div>
-              </motion.div>
-              {running ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="border border-(--rule) bg-(--surface-1) p-10 text-center"
-                >
-                  <motion.div
-                    className="flex items-center justify-center gap-3"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-(--signal)" />
-                    <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-(--muted)">
-                      Simulating execution…
-                    </p>
-                    <span className="h-1.5 w-1.5 rounded-full bg-(--signal)" />
-                  </motion.div>
-                </motion.div>
-              ) : result ? (
-                <ExecutionTimeline steps={result.steps} />
-              ) : null}
-            </section>
+              </div>
+              <ExecutionTimeline steps={result ? result.steps : PENDING_STEPS} />
+            </motion.section>
           )}
 
-          {result && !running && (
-            <section>
-              <motion.div
-                className="flex items-center gap-4 mb-5"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut", delay: 0.1 }}
-              >
+          {/* SECTION 04 — Result */}
+          {result && (
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex items-center gap-4 mb-5">
                 <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">04</span>
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Result</p>
-                  <p className="text-xs text-(--muted) mt-0.5">Computed amounts · hook outcome · plain-English explanation</p>
+                  <p className="text-xs text-(--muted) mt-0.5">Simulated outcome for {hookId?.shortname}</p>
                 </div>
-              </motion.div>
+              </div>
               <ResultPanel result={result} />
-            </section>
+            </motion.section>
           )}
 
           {/* How to use these hooks (integration guide) */}
@@ -280,33 +257,26 @@ export default function DemoPage() {
             <div className="border border-(--rule) bg-(--surface-0) p-5 md:p-6 mb-4">
               <p className="text-sm text-(--ink-2) leading-relaxed">
                 These hook contracts are <strong className="text-(--ink) font-semibold">permissionless infrastructure</strong>{" "}
-                — anyone can attach them to their own pool.
-                In Uniswap V4 the <span className="mono text-(--ink)">hooks</span> field of a{" "}
-                <span className="mono text-(--ink)">PoolKey</span> is set once at{" "}
-                <span className="mono text-(--ink)">initialize()</span> time. After that, every swap
-                in that pool automatically runs the hook's logic — swappers need no special calldata.
-                You bring your own token pair; you choose which hook protects or manages it.
+                — anyone can attach them to their own pool. On Uniswap&apos;s web app,
+                the <span className="mono text-(--ink)">New position</span> screen has an{" "}
+                <span className="mono text-(--ink)">Enter hook address</span> field.
+                Paste one of our contract addresses there and the pool is initialized with the hook baked in.
+                Every swap in that pool then runs the hook&apos;s logic automatically — swappers need nothing extra.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
               <UsageCard
                 title="Add a hook to your pool"
-                kind="Pool creator"
-                body="When initializing a new V4 pool for any token pair, set the hooks field to one of our contract addresses. From that moment, every swap in your pool runs through the hook automatically — your LPs and traders get MEV protection, fee splitting, or batch clearing with no changes to the swap flow."
-                code={`// One-time setup — this is where the hook is attached
-poolManager.initialize(
-  PoolKey({
-    currency0:   Currency.wrap(YOUR_TOKEN_A),
-    currency1:   Currency.wrap(YOUR_TOKEN_B),
-    fee:         3000,
-    tickSpacing: 60,
-    hooks:       IHooks(OFA_HOOK_ADDRESS) // ← our hook contract
-  }),
-  SQRT_PRICE_1_1, // initial sqrtPriceX96
-  ""              // hookData for afterInitialize
-);
-// Every swap in this pool now runs OFAHook.beforeSwap() automatically`}
+                kind="Pool creator · UI"
+                body="On the Uniswap web app, creating a hooked pool takes one extra field. No code, no deployment — just paste the hook address and the pool is live."
+                steps={[
+                  `Go to <span class="mono text-(--ink)">app.uniswap.org → Pool → New position</span>`,
+                  `Select <span class="mono text-(--ink)">v4 position</span> from the top-right toggle`,
+                  `Choose your token pair and fee tier`,
+                  `Paste one of our contract addresses into the <span class="mono text-(--ink)">Enter hook address</span> field`,
+                  `Continue — every swap in this pool now runs the hook automatically`,
+                ]}
               />
               <UsageCard
                 title="Swap in a hooked pool"
@@ -377,40 +347,19 @@ posManager.modifyLiquidities(
               <UsageCard
                 title="SUBA — wait for the epoch clearing"
                 kind="Wallet user / keeper"
-                body="Submit a swap as normal. The hook buffers it as an ERC-6909 claim against PoolManager. At epoch boundary the designated keeper publishes a uniform clearing price and every buffered order in the batch settles at that one price."
-                code={`// Users — submit a normal swap, automatically buffered
-poolManager.swap(poolKey, params, "");
-
-// Keeper — publish clearing price at epoch end
-subaHook.settleEpoch(
+                body="Orders submitted to SUBA are buffered until the keeper calls settleEpoch, which runs a uniform-price batch auction. Traders get a fair clearing price; keepers earn a gas incentive. Front-running is structurally impossible."
+                code={`subaHook.submitOrder(
   poolKey,
-  clearingSqrtPriceX96,
-  epochId
-);`}
+  amountIn,
+  minAmountOut,
+  deadline
+);
+
+// keeper — called once per epoch
+subaHook.settleEpoch(poolKey);`}
               />
             </div>
           </motion.section>
-
-          <motion.div
-            className="border border-(--rule) bg-(--surface-1) px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <div className="flex-1">
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-(--ink) mb-1">About this simulator</p>
-              <p className="text-xs text-(--muted) leading-relaxed">
-                Simulation uses simplified constant-product math with the deployed pool reserves (10,000 XHKB / 10,000 XHKA).
-                Hook behavior (auction thresholds, fee splits, batch buffering) matches the deployed contract logic.
-                No transaction is sent — this is a pure frontend simulation.
-              </p>
-            </div>
-            <div className="flex flex-col gap-1 text-right shrink-0">
-              <span className="eyebrow text-(--muted)">Pool</span>
-              <span className="font-mono text-xs text-(--ink-2)">XHKB / XHKA · 0.3% · tickSpacing 60</span>
-            </div>
-          </motion.div>
 
         </div>
       </main>
@@ -425,11 +374,13 @@ function UsageCard({
   kind,
   body,
   code,
+  steps,
 }: {
   title: string
   kind: string
   body: string
-  code: string
+  code?: string
+  steps?: string[]
 }) {
   return (
     <div className="bg-(--surface-0) p-5 md:p-6 flex flex-col gap-3">
@@ -440,9 +391,23 @@ function UsageCard({
         </span>
       </div>
       <p className="text-sm leading-relaxed text-(--ink-2)">{body}</p>
-      <pre className="overflow-x-auto bg-(--surface-1) border border-(--rule) p-3 text-[11.5px] leading-relaxed mono text-(--ink) mt-1">
-        <code>{code}</code>
-      </pre>
+      {steps && (
+        <ol className="mt-1 space-y-2">
+          {steps.map((step, i) => (
+            <li key={i} className="flex items-start gap-3 text-sm text-(--ink-2)">
+              <span className="mono text-[11px] text-(--muted) shrink-0 mt-0.5">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span dangerouslySetInnerHTML={{ __html: step }} />
+            </li>
+          ))}
+        </ol>
+      )}
+      {code && (
+        <pre className="overflow-x-auto bg-(--surface-1) border border-(--rule) p-3 text-[11.5px] leading-relaxed mono text-(--ink) mt-1">
+          <code>{code}</code>
+        </pre>
+      )}
     </div>
   )
 }
