@@ -56,9 +56,9 @@ export default function LandingPage() {
             backgroundRepeat: "no-repeat",
           }}
         >
-          <div className="mx-auto max-w-[1400px] px-6 pt-6 pb-12 md:pt-10 md:pb-20 relative">
+          <div className="mx-auto max-w-[1400px] px-4 pt-6 pb-10 md:px-6 md:pt-10 md:pb-20 relative">
             {/* Eyebrow row */}
-            <div className="flex flex-wrap items-baseline gap-4 mb-10">
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-8 md:mb-10">
               <span className="eyebrow">Vol. I · No. 01</span>
               <span className="eyebrow text-(--ink-2)">X Layer Mainnet · Chain 196</span>
               <span className="eyebrow text-(--ink-2)">May 2026</span>
@@ -72,7 +72,7 @@ export default function LandingPage() {
             </div>
 
             {/* Massive editorial title */}
-            <motion.h1 className="display text-[clamp(3rem,11vw,9.5rem)] leading-[0.88] tracking-[-0.04em]">
+            <motion.h1 className="display text-[clamp(2.5rem,12vw,9.5rem)] leading-[0.88] tracking-[-0.04em]">
               {["The", "hook"].map((word, i) => (
                 <motion.span
                   key={word + i}
@@ -99,9 +99,9 @@ export default function LandingPage() {
             </motion.h1>
 
             {/* Subhead + CTAs */}
-            <div className="mt-12 grid grid-cols-12 gap-8">
+            <div className="mt-10 md:mt-12 grid grid-cols-12 gap-6 md:gap-8">
               <div className="col-span-12 md:col-span-7">
-                <p className="text-lg leading-relaxed text-(--ink-2) md:text-xl">
+                <p className="text-base leading-relaxed text-(--ink-2) md:text-xl">
                   Five production-grade Uniswap V4 hooks on X Layer.
                   Sealed orderflow auctions, bilateral OTC settlement,
                   CDP-style LP tranching, sealed-bid batch auctions,
@@ -169,7 +169,7 @@ export default function LandingPage() {
         {/* SECTION — swap flow */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-16"
+            className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-16"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -218,7 +218,7 @@ export default function LandingPage() {
         {/* SECTION — taxonomy / table of contents */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 pt-16 pb-2"
+            className="mx-auto max-w-[1400px] px-4 pt-10 pb-2 md:px-6 md:pt-16"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -267,7 +267,7 @@ export default function LandingPage() {
         {/* SECTION — DEEP DIVE */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-20"
+            className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-20"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -317,7 +317,7 @@ export default function LandingPage() {
         {/* SECTION — ABOUT */}
         <section className="border-b border-(--rule) bg-(--surface-1)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-20 grid grid-cols-12 gap-6 md:gap-8"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -396,7 +396,7 @@ export default function LandingPage() {
         {/* SECTION — FAQ */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-20 grid grid-cols-12 gap-6 md:gap-8"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -425,7 +425,7 @@ export default function LandingPage() {
         {/* SECTION — colophon */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-20 grid grid-cols-12 gap-8"
+            className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-20 grid grid-cols-12 gap-6 md:gap-8"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -476,7 +476,7 @@ export default function LandingPage() {
         {/* SECTION — on-chain manifest strip */}
         <section className="border-b border-(--rule)">
           <motion.div
-            className="mx-auto max-w-[1400px] px-6 py-12"
+            className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12"
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
@@ -529,7 +529,7 @@ export default function LandingPage() {
 
         {/* SECTION — closing CTA */}
         <section className="bg-(--ink) text-(--surface-0)">
-          <div className="mx-auto max-w-[1400px] px-6 py-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+          <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
             <div>
               <div className="mono text-[11px] uppercase tracking-[0.18em] opacity-60 mb-3">
                 Open the terminal
@@ -625,7 +625,7 @@ function HookDeepDive({
   permissions: string[]
 }) {
   return (
-    <article className="bg-(--surface-0) px-6 md:px-10 py-12 md:py-16 grid grid-cols-12 gap-8">
+    <article className="bg-(--surface-0) px-5 md:px-10 py-10 md:py-16 grid grid-cols-12 gap-6 md:gap-8">
       <div className="col-span-12 md:col-span-3">
         <div className="flex items-center gap-2 mb-4">
           <Icon className="h-4 w-4 text-(--signal)" strokeWidth={1.5} />
@@ -647,7 +647,7 @@ function HookDeepDive({
         </Link>
       </div>
 
-      <div className="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
         <div>
           <div className="eyebrow mb-3">Why it matters</div>
           <p className="text-[15px] leading-relaxed text-(--ink-2)">{whyItMatters}</p>
