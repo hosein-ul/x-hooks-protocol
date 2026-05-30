@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, type Variants } from "framer-motion"
+import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { cn } from "@/lib/utils"
 import type { ExecStep, StepStatus } from "@/lib/simulation"
 
@@ -22,14 +22,85 @@ const statusDot: Record<StepStatus, string> = {
   PENDING:  "bg-(--signal)/60",
 }
 
-const containerV: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.18 } },
+const statusGlow: Record<StepStatus, string> = {
+  FIRED:    "shadow-[0_0_12px_rgba(0,200,100,0.25)]",
+  SKIP:     "",
+  BUFFERED: "shadow-[0_0_12px_rgba(255,140,0,0.25)]",
+  PENDING:  "shadow-[0_0_8px_rgba(255,140,0,0.15)]",
 }
 
-const itemV: Variants = {
-  hidden:   { opacity: 0, y: 20 },
-  visible:  { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+// Per-step delay between cards (s). Higher = more deliberate, realistic feel.
+const STEP_DELAY = 0.55
+
+const containerV: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: STEP_DELAY } },
+}
+
+const cardV: Variants = {
+  hidden: { opacity: 0, y: 28, scale: 0.96 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] },
+  },
+}
+
+function KineticLabel({ text }: { text: string }) {
+  return (
+    <span>
+      {text.split("").map((char, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut", delay: i * 0.04 }}
+          className="inline-block"
+          style={{ whiteSpace: char === " " ? "pre" : undefined }}
+        >
+          {char === " " ? " " : char}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
+function StatusBadge({ status }: { status: StepStatus }) {
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={status}
+        layout
+        initial={{ opacity: 0, scale: 0.8, y: -4 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: 4 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(
+          "self-start px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] border",
+          statusStyles[status],
+        )}
+      >
+        {status}
+      </motion.span>
+    </AnimatePresence>
+  )
+}
+
+function PulseDot({ status }: { status: StepStatus }) {
+  const shouldPulse = status === "FIRED" || status === "BUFFERED"
+  return (
+    <div className="relative h-2 w-2 shrink-0">
+      {shouldPulse && (
+        <motion.span
+          className={cn("absolute inset-0 rounded-full", statusDot[status])}
+          animate={{ scale: [1, 1.9, 1], opacity: [0.8, 0, 0.8] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+      <span className={cn("absolute inset-0 rounded-full", statusDot[status])} />
+    </div>
+  )
 }
 
 export function ExecutionTimeline({ steps }: Props) {
@@ -42,45 +113,58 @@ export function ExecutionTimeline({ steps }: Props) {
       className="grid grid-cols-1 md:grid-cols-5 gap-px bg-(--rule) border border-(--rule)"
     >
       {steps.map((step, i) => (
-        <motion.div key={step.id} variants={itemV} className="relative bg-(--surface-0)">
-          {/* Connector arrow (desktop) */}
+        <motion.div
+          key={step.id}
+          variants={cardV}
+          className={cn("relative bg-(--surface-0) transition-shadow", statusGlow[step.status])}
+        >
           {i < steps.length - 1 && (
-            <div className="hidden md:block absolute -right-[7px] top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 border-t border-r border-(--rule) bg-(--surface-0) rotate-45" />
+            <motion.div
+              className="hidden md:block absolute -right-[7px] top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 border-t border-r border-(--rule) bg-(--surface-0) rotate-45"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * STEP_DELAY + 0.5, duration: 0.45, ease: "backOut" }}
+            />
           )}
 
           <div className="p-4 flex flex-col gap-3 h-full">
-            {/* Step index + status dot */}
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[10px] text-(--muted) uppercase tracking-[0.18em]">
+              <motion.span
+                className="font-mono text-[10px] text-(--muted) uppercase tracking-[0.18em] tabular-nums"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * STEP_DELAY + 0.2, duration: 0.5 }}
+              >
                 {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className={cn(
-                "h-2 w-2 rounded-full shrink-0",
-                statusDot[step.status],
-              )} />
+              </motion.span>
+              <PulseDot status={step.status} />
             </div>
 
-            {/* Label */}
             <div>
               <p className="font-mono text-[11px] font-semibold text-(--ink) uppercase tracking-[0.14em]">
-                {step.label}
+                <KineticLabel text={step.label} />
               </p>
-              <p className="text-[11px] text-(--muted) mt-0.5">{step.sublabel}</p>
+              <motion.p
+                className="text-[11px] text-(--muted) mt-0.5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * STEP_DELAY + 0.4, duration: 0.5 }}
+              >
+                {step.sublabel}
+              </motion.p>
             </div>
 
-            {/* Status badge */}
-            <span className={cn(
-              "self-start px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] border",
-              statusStyles[step.status],
-            )}>
-              {step.status}
-            </span>
+            <StatusBadge status={step.status} />
 
-            {/* Note */}
             {step.note && (
-              <p className="text-[11px] text-(--ink-2) leading-snug border-t border-(--rule) pt-3 mt-auto">
+              <motion.p
+                className="text-[11px] text-(--ink-2) leading-snug border-t border-(--rule) pt-3 mt-auto"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * STEP_DELAY + 0.65, duration: 0.5 }}
+              >
                 {step.note}
-              </p>
+              </motion.p>
             )}
           </div>
         </motion.div>

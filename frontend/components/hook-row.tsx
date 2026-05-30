@@ -26,7 +26,7 @@ export function HookRow({ name, address, pools, interactions, className }: Props
     <Link
       href={`/hooks/${name.toLowerCase()}`}
       className={cn(
-        "group grid grid-cols-12 items-start gap-6 border-t border-(--rule) px-6 py-7 transition-colors hover:bg-(--surface-1)",
+        "group grid grid-cols-12 items-start gap-4 md:gap-6 border-t border-(--rule) px-4 py-5 md:px-6 md:py-7 transition-colors hover:bg-(--surface-1)",
         className,
       )}
     >
