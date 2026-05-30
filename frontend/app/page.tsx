@@ -20,7 +20,6 @@ import {
 } from "@/lib/constants"
 import { useAllHookInfos, useRegistryStats } from "@/hooks/useHookRegistry"
 import { motion, type Variants } from "framer-motion"
-import { ProtocolGraph } from "@/components/protocol-graph"
 
 const containerVariants: Variants = {
   hidden: {},
@@ -47,8 +46,17 @@ export default function LandingPage() {
       <main className="flex-1">
 
         {/* HERO — editorial masthead */}
-        <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 pt-6 pb-12 md:pt-10 md:pb-20">
+        <section
+          className="border-b border-(--rule) relative bg-(--surface-0)"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom, rgba(246,243,236,0.55) 0%, rgba(246,243,236,0.78) 60%, rgba(246,243,236,0.92) 100%), url('https://images.unsplash.com/photo-1635776062360-af423602aff3?w=1920&q=85&fit=crop&auto=format')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="mx-auto max-w-[1400px] px-6 pt-6 pb-12 md:pt-10 md:pb-20 relative">
             {/* Eyebrow row */}
             <div className="flex flex-wrap items-baseline gap-4 mb-10">
               <span className="eyebrow">Vol. I · No. 01</span>
@@ -125,27 +133,20 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Stats column + protocol graph */}
+              {/* Stats column */}
               <motion.div
-                className="col-span-12 md:col-span-5 flex flex-col gap-px"
+                className="col-span-12 md:col-span-5 grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)"
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
               >
-                {/* Animated protocol graph */}
-                <div className="border border-(--rule) bg-(--surface-1) py-4">
-                  <ProtocolGraph />
-                </div>
-                {/* Live stats */}
-                <div className="grid grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
-                  <Stat label="Hooks Deployed" value={liveHookCount.toString().padStart(2, "0")} />
-                  <Stat label="Pools Registered" value={livePoolCount.toString().padStart(2, "0")} />
-                  <Stat
-                    label="Interactions"
-                    value={totalInteractions > 0 ? totalInteractions.toLocaleString() : "—"}
-                  />
-                  <Stat label="Chain" value="X-LAYER" sub="196" />
-                </div>
+                <Stat label="Hooks Deployed" value={liveHookCount.toString().padStart(2, "0")} />
+                <Stat label="Pools Registered" value={livePoolCount.toString().padStart(2, "0")} />
+                <Stat
+                  label="Interactions"
+                  value={totalInteractions > 0 ? totalInteractions.toLocaleString() : "—"}
+                />
+                <Stat label="Chain" value="X-LAYER" sub="196" />
               </motion.div>
             </div>
           </div>
