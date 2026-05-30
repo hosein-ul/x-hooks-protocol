@@ -279,35 +279,39 @@ export default function DemoPage() {
 
             <div className="border border-(--rule) bg-(--surface-0) p-5 md:p-6 mb-4">
               <p className="text-sm text-(--ink-2) leading-relaxed">
-                In Uniswap V4 the <span className="mono text-(--ink)">hooks</span> field lives inside{" "}
-                <span className="mono text-(--ink)">PoolKey</span> — it is chosen at pool creation, not
-                at swap time. Every swap that reaches <span className="mono text-(--ink)">PoolManager.swap()</span>{" "}
-                automatically triggers <span className="mono text-(--ink)">beforeSwap</span> /{" "}
-                <span className="mono text-(--ink)">afterSwap</span> on the hook defined in that pool's key.
-                From a caller's perspective <strong className="text-(--ink) font-semibold">hooks are
-                invisible</strong> — you just route to the right pool.
+                These hook contracts are <strong className="text-(--ink) font-semibold">permissionless infrastructure</strong>{" "}
+                — anyone can attach them to their own pool.
+                In Uniswap V4 the <span className="mono text-(--ink)">hooks</span> field of a{" "}
+                <span className="mono text-(--ink)">PoolKey</span> is set once at{" "}
+                <span className="mono text-(--ink)">initialize()</span> time. After that, every swap
+                in that pool automatically runs the hook's logic — swappers need no special calldata.
+                You bring your own token pair; you choose which hook protects or manages it.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
               <UsageCard
-                title="Wallet / UI user"
-                kind="No code needed"
-                body="Open any V4-compatible interface (Uniswap app, aggregator). The pool listing includes our hooked pools — they look identical to any other XHKB/XHKA pool except for the hook address in the PoolKey. Select the pool, enter an amount, approve tokens once, click Swap. The hook fires automatically inside PoolManager. No extra steps, no special calldata."
-                code={`// Nothing special — just a normal swap on the correct pool.
-// The hook address is part of the pool's identity, not the call.
-
-// PoolKey for the OFAHook pool:
-//   currency0:   XHKB
-//   currency1:   XHKA
-//   fee:         3000  (0.30%)
-//   tickSpacing: 60
-//   hooks:       0x<OFAHook>   ← baked in at deployment, read-only`}
+                title="Add a hook to your pool"
+                kind="Pool creator"
+                body="When initializing a new V4 pool for any token pair, set the hooks field to one of our contract addresses. From that moment, every swap in your pool runs through the hook automatically — your LPs and traders get MEV protection, fee splitting, or batch clearing with no changes to the swap flow."
+                code={`// One-time setup — this is where the hook is attached
+poolManager.initialize(
+  PoolKey({
+    currency0:   Currency.wrap(YOUR_TOKEN_A),
+    currency1:   Currency.wrap(YOUR_TOKEN_B),
+    fee:         3000,
+    tickSpacing: 60,
+    hooks:       IHooks(OFA_HOOK_ADDRESS) // ← our hook contract
+  }),
+  SQRT_PRICE_1_1, // initial sqrtPriceX96
+  ""              // hookData for afterInitialize
+);
+// Every swap in this pool now runs OFAHook.beforeSwap() automatically`}
               />
               <UsageCard
-                title="Smart-contract integrator"
-                kind="Solidity"
-                body="Contracts must implement IUnlockCallback. Call manager.unlock() to enter the atomic context, then call manager.swap() inside the callback. The hook address in the PoolKey is what routes execution — no other change from a vanilla swap."
+                title="Swap in a hooked pool"
+                kind="Solidity / contract"
+                body="Swapping is identical to any V4 pool — hooks fire automatically from the PoolKey, nothing extra is needed at swap time. Implement IUnlockCallback, call manager.unlock(), then manager.swap() inside the callback."
                 code={`contract MySwapper is IUnlockCallback {
   IPoolManager immutable manager;
 
@@ -318,7 +322,7 @@ export default function DemoPage() {
   function unlockCallback(bytes calldata data)
       external returns (bytes memory) {
     PoolKey memory key = abi.decode(data, (PoolKey));
-    // hooks.beforeSwap fires here automatically ↓
+    // hook.beforeSwap fires automatically ↓
     BalanceDelta delta = manager.swap(
       key,
       IPoolManager.SwapParams({
@@ -326,9 +330,9 @@ export default function DemoPage() {
         amountSpecified:   -100e18,
         sqrtPriceLimitX96: MIN_SQRT_RATIO + 1
       }),
-      "" // hookData — empty for OFA/BCS/CAL/SUBA basic swaps
+      "" // hookData — empty for basic swaps
     );
-    // hooks.afterSwap fires here automatically ↑
+    // hook.afterSwap fires automatically ↑
     // settle / take delta ...
   }
 }`}
