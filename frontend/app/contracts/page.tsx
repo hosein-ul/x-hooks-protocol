@@ -25,11 +25,11 @@ export default function ContractsPage() {
 
         {/* Header strip */}
         <div className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-12 grid grid-cols-12 gap-6 items-end">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12 grid grid-cols-12 gap-5 md:gap-6 items-end">
             <div className="col-span-12 md:col-span-8">
               <div className="eyebrow mb-3">Manifest</div>
               <KineticContainer staggerChildren={0.025}>
-                <h1 className="display text-5xl md:text-6xl leading-[0.95]">
+                <h1 className="display text-4xl sm:text-5xl md:text-6xl leading-[0.95]">
                   <KineticChars text="Verifiable" />
                   <br />
                   <KineticChars text="contract registry." className="display-italic" baseDelay={11} />
@@ -51,7 +51,7 @@ export default function ContractsPage() {
 
         {/* Registry table */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-12">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12">
             <SectionHeader number="01" title="Protocol contracts" />
 
             <div className="border border-(--rule)">
@@ -96,7 +96,7 @@ export default function ContractsPage() {
 
         {/* Pools section */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-12">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12">
             <SectionHeader number="02" title="V4 Pools" />
             <p className="text-sm text-(--ink-2) max-w-2xl mb-6">
               Five canonical{" "}
@@ -168,7 +168,7 @@ export default function ContractsPage() {
                 ].map(({ hook, id }) => (
                   <div
                     key={hook}
-                    className="grid grid-cols-12 items-center gap-x-4 gap-y-2 px-5 py-4 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
+                    className="grid grid-cols-12 items-center gap-x-3 gap-y-2 md:gap-x-4 px-4 py-3 md:px-5 md:py-4 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
                   >
                     <div className="col-span-12 md:col-span-2">
                       <Link
@@ -209,7 +209,7 @@ export default function ContractsPage() {
 
         {/* Verification guide */}
         <section>
-          <div className="mx-auto max-w-[1400px] px-6 py-16 grid grid-cols-12 gap-8">
+          <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-16 grid grid-cols-12 gap-6 md:gap-8">
             <div className="col-span-12 md:col-span-3">
               <div className="eyebrow mb-3">03</div>
               <h2 className="display text-3xl md:text-4xl">
@@ -256,8 +256,8 @@ export default function ContractsPage() {
 function SectionHeader({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-end gap-6 mb-8">
-      <div className="display text-5xl md:text-6xl text-(--muted) leading-none">{number}</div>
-      <h2 className="display text-3xl md:text-4xl">{title}</h2>
+      <div className="display text-4xl md:text-6xl text-(--muted) leading-none">{number}</div>
+      <h2 className="display text-2xl md:text-4xl">{title}</h2>
     </div>
   )
 }
@@ -282,7 +282,7 @@ function ContractRow({
   href?: string
 }) {
   return (
-    <div className="grid grid-cols-12 items-start md:items-center gap-x-4 gap-y-3 px-5 py-5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors">
+    <div className="grid grid-cols-12 items-start md:items-center gap-x-3 gap-y-3 md:gap-x-4 px-4 py-4 md:px-5 md:py-5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors">
       <div className="col-span-2 md:col-span-1 display text-2xl text-(--muted) leading-none">
         {ordinal}
       </div>
