@@ -46,16 +46,7 @@ export default function LandingPage() {
       <main className="flex-1">
 
         {/* HERO — editorial masthead */}
-        <section
-          className="border-b border-(--rule) relative bg-(--surface-0)"
-          style={{
-            backgroundImage:
-              "linear-gradient(to bottom, rgba(246,243,236,0.55) 0%, rgba(246,243,236,0.78) 60%, rgba(246,243,236,0.92) 100%), url('https://images.unsplash.com/photo-1635776062360-af423602aff3?w=1920&q=85&fit=crop&auto=format')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
+        <section className="border-b border-(--rule) relative bg-(--surface-0) hero-bg">
           <div className="mx-auto max-w-[1400px] px-4 pt-6 pb-10 md:px-6 md:pt-10 md:pb-20 relative">
             {/* Eyebrow row */}
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-8 md:mb-10">
@@ -504,13 +495,13 @@ export default function LandingPage() {
                 ["PLTHook",  "0x57dcbf83710828f3d530daf53725c0faacc970afd0cb23e1965e21d3d5326f06"],
                 ["SUBAHook", "0x600edb115d98e91142105e77f29eb1f87c05dbfa0bd7c0b800f62847feb746fa"],
                 ["CALHook",  "0xa3dfc4b76570d536daa1b9154e0ffeebb530e1a637d53ea9debb5a8c0ac634fa"],
-              ] as [string, string][]).map(([name, poolId]) => (
+              ] as [string, string][]).map(([hookName, poolId]) => (
                 <Link
-                  key={name}
-                  href={`/hooks/${name.toLowerCase()}`}
+                  key={hookName}
+                  href={`/hooks/${hookName.toLowerCase()}`}
                   className="grid grid-cols-12 items-center gap-x-4 px-5 py-3.5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
                 >
-                  <div className="col-span-3 md:col-span-2 text-sm font-medium text-(--ink)">{name}</div>
+                  <div className="col-span-3 md:col-span-2 text-sm font-medium text-(--ink)">{hookName}</div>
                   <div className="col-span-8 md:col-span-9 font-mono text-[11px] text-(--ink-2) break-all leading-snug">{poolId}</div>
                   <div className="col-span-1 flex justify-end">
                     <ArrowUpRight className="h-3.5 w-3.5 text-(--muted)" />

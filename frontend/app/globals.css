@@ -34,16 +34,26 @@
 }
 
 [data-theme="dark"] {
-  /* Dark theme — warm ink */
-  --surface-0: #0c0b09;
-  --surface-1: #15130f;
-  --surface-2: #1d1a14;
-  --ink:       #efe9d8;
-  --ink-2:     #c4bda8;
-  --muted:     #807a6b;
-  --rule:      #2a261d;
-  --signal:    #e26222;
-  --gain:      #5fa340;
+  /* Dark theme — warm editorial depth */
+  --surface-0: #0f0e0c;
+  --surface-1: #1e1b14;
+  --surface-2: #28251c;
+  --ink:       #f2ecdb;
+  --ink-2:     #d0c9b4;
+  --muted:     #9a9384;
+  --rule:      #3d3829;
+  --signal:    #e86c30;
+  --gain:      #62a842;
+}
+
+/* ── Dark mode body: subtle warm radial depth (not flat black) ── */
+[data-theme="dark"] body {
+  background: radial-gradient(
+    ellipse 110% 70% at 80% 120%,
+    #1a1710 0%,
+    #0f0e0c 60%
+  );
+  background-attachment: fixed;
 }
 
 * { border-color: var(--rule); }
@@ -117,6 +127,7 @@ body {
   mix-blend-mode: overlay;
 }
 [data-theme="light"] .grain::before { opacity: 0.08; }
+[data-theme="dark"]  .grain::before { opacity: 0.12; mix-blend-mode: screen; }
 
 /* ────── Marquee ticker ────── */
 @keyframes marquee {
@@ -169,3 +180,37 @@ body {
   background: var(--gain);
   animation: pulse-soft 2.4s ease-in-out infinite;
 }
+
+/* ────── Hero background — theme-aware overlay ────── */
+.hero-bg {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(246,243,236,0.52) 0%,
+      rgba(246,243,236,0.78) 55%,
+      rgba(246,243,236,0.95) 100%
+    ),
+    url('https://images.unsplash.com/photo-1635776062360-af423602aff3?w=1920&q=85&fit=crop&auto=format');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+[data-theme="dark"] .hero-bg {
+  background-image:
+    linear-gradient(to bottom,
+      rgba(15,14,12,0.45) 0%,
+      rgba(15,14,12,0.72) 50%,
+      rgba(15,14,12,0.96) 100%
+    ),
+    url('https://images.unsplash.com/photo-1635776062360-af423602aff3?w=1920&q=85&fit=crop&auto=format');
+}
+
+/* ────── Dark mode: code blocks warmer ────── */
+[data-theme="dark"] pre,
+[data-theme="dark"] code {
+  background-color: #1a1710 !important;
+  border-color: #3d3829 !important;
+}
+
+/* ────── Dark mode: scrollbar warmer ────── */
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3d3829; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #5a5240; }
