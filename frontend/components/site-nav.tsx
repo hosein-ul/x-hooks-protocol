@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 const NAV = [
   { href: "/",           label: "Index" },
   { href: "/dashboard",  label: "Dashboard" },
+  { href: "/demo",       label: "Simulator" },
   { href: "/contracts",  label: "Contracts" },
 ] as const
 
