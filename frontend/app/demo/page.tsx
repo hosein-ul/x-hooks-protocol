@@ -8,7 +8,7 @@ import { HookSelector } from "@/components/hook-simulator/HookSelector"
 import { SwapForm } from "@/components/hook-simulator/SwapForm"
 import { ExecutionTimeline } from "@/components/hook-simulator/ExecutionTimeline"
 import { ResultPanel } from "@/components/hook-simulator/ResultPanel"
-import { simulateSwap, type HookName, type SimResult } from "@/lib/simulation"
+import { simulateSwap, type HookName, type SimResult, type ExecStep } from "@/lib/simulation"
 import { getHookIdentity } from "@/lib/constants"
 
 type Direction = "zeroForOne" | "oneForZero"
@@ -72,6 +72,14 @@ function WordReveal({ text, className }: { text: string; className?: string }) {
     </p>
   )
 }
+
+const PENDING_STEPS: ExecStep[] = [
+  { id: "user",   label: "User",          sublabel: "Swap initiated",         status: "PENDING", note: null },
+  { id: "before", label: "beforeSwap",    sublabel: "Hook intercept check",   status: "PENDING", note: null },
+  { id: "amm",    label: "Core AMM",      sublabel: "Constant-product curve", status: "PENDING", note: null },
+  { id: "after",  label: "afterSwap",     sublabel: "Hook post-swap check",   status: "PENDING", note: null },
+  { id: "settle", label: "Settle / Take", sublabel: "ERC-6909 settlement",    status: "PENDING", note: null },
+]
 
 const sectionNumVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
@@ -184,11 +192,12 @@ export default function DemoPage() {
             </div>
             <div className="flex justify-center">
               <SwapForm
+                hookName={selectedHook}
                 amount={amount}
                 direction={direction}
                 running={running}
                 onAmountChange={setAmount}
-                onDirectionToggle={() => setDirection(d => d === "zeroForOne" ? "oneForZero" : "zeroForOne")}
+                onFlip={() => setDirection(d => d === "zeroForOne" ? "oneForZero" : "zeroForOne")}
                 onSimulate={handleSimulate}
               />
             </div>
@@ -208,7 +217,7 @@ export default function DemoPage() {
                   <p className="text-xs text-(--muted) mt-0.5">V4 hook lifecycle — phase by phase</p>
                 </div>
               </div>
-              <ExecutionTimeline hook={selectedHook} running={running} result={result} />
+              <ExecutionTimeline steps={result ? result.steps : PENDING_STEPS} />
             </motion.section>
           )}
 
