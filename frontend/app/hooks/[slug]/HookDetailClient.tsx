@@ -26,7 +26,7 @@ export function HookDetailClient({ address, hint }: Props) {
     return (
       <div className="min-h-screen flex flex-col">
         <SiteNav />
-        <main className="flex-1 mx-auto max-w-[1400px] px-6 py-20">
+        <main className="flex-1 mx-auto max-w-[1400px] px-4 py-12 md:px-6 md:py-20">
           <h1 className="display text-4xl mb-4">
             {isLoading ? "Loading…" : "Hook not found."}
           </h1>
@@ -57,7 +57,7 @@ export function HookDetailClient({ address, hint }: Props) {
 
         {/* Back strip */}
         <div className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1200px] px-6 py-4 flex items-center justify-between">
+          <div className="mx-auto max-w-[1200px] px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3">
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-(--muted) hover:text-(--ink)"
@@ -74,8 +74,8 @@ export function HookDetailClient({ address, hint }: Props) {
         <article>
           {/* Header */}
           <header className="border-b border-(--rule)">
-            <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-12 md:pt-20 md:pb-16">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="mx-auto max-w-[1200px] px-4 pt-10 pb-10 md:px-6 md:pt-20 md:pb-16">
+              <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6">
                 <Icon className="h-5 w-5 text-(--signal)" strokeWidth={1.5} />
                 <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-(--muted)">
                   Hook · {ordinal} {shortname}
@@ -95,7 +95,7 @@ export function HookDetailClient({ address, hint }: Props) {
               </KineticContainer>
 
               <KineticContainer staggerChildren={0.04} delayChildren={0.3}>
-                <p className="mt-8 max-w-3xl text-xl md:text-2xl leading-snug text-(--ink-2) display">
+                <p className="mt-6 md:mt-8 max-w-3xl text-lg md:text-2xl leading-snug text-(--ink-2) display">
                   <KineticWords text={headline} />
                 </p>
               </KineticContainer>
@@ -104,7 +104,7 @@ export function HookDetailClient({ address, hint }: Props) {
                 {tagline}
               </p>
 
-              <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-px bg-(--rule) border border-(--rule)">
+              <div className="mt-8 md:mt-10 grid grid-cols-2 md:grid-cols-4 gap-px bg-(--rule) border border-(--rule)">
                 <Meta label="Type" value={type} />
                 <Meta label="Status" value={info ? (info.isActive ? "Active" : "Idle") : "—"} />
                 <Meta label="Version" value={`v${info?.version ?? "1.0.0"}`} mono />
@@ -115,7 +115,7 @@ export function HookDetailClient({ address, hint }: Props) {
 
           {/* Body */}
           <div className="border-b border-(--rule)">
-            <div className="mx-auto max-w-[1200px] px-6 py-16 grid grid-cols-12 gap-10">
+            <div className="mx-auto max-w-[1200px] px-4 py-10 md:px-6 md:py-16 grid grid-cols-12 gap-8 md:gap-10">
               <div className="col-span-12 md:col-span-8">
                 <div className="mb-12">
                   <div className="eyebrow mb-3">Mechanics</div>
@@ -208,7 +208,7 @@ export function HookDetailClient({ address, hint }: Props) {
 
           {/* Prev / next */}
           <nav className="border-b border-(--rule)">
-            <div className="mx-auto max-w-[1200px] px-6 py-10 grid grid-cols-2 gap-6">
+            <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6 md:py-10 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {prev ? <NavCard direction="prev" name={prev} /> : <div />}
               {next ? <NavCard direction="next" name={next} /> : <div />}
             </div>
@@ -262,8 +262,8 @@ function NavCard({
   return (
     <Link
       href={`/hooks/${name.toLowerCase()}`}
-      className={`group border border-(--rule) p-6 hover:bg-(--surface-1) transition-colors ${
-        isNext ? "text-right" : ""
+      className={`group border border-(--rule) p-5 md:p-6 hover:bg-(--surface-1) transition-colors ${
+        isNext ? "sm:text-right" : ""
       }`}
     >
       <div className="eyebrow mb-2">

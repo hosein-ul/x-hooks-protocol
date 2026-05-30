@@ -112,9 +112,9 @@ export default function DemoPage() {
 
       <main className="flex-1">
         <section className="border-b border-(--rule) overflow-hidden">
-          <div className="mx-auto max-w-[1400px] px-6 pt-8 pb-12">
+          <div className="mx-auto max-w-[1400px] px-4 pt-6 pb-10 md:px-6 md:pt-8 md:pb-12">
             <motion.div
-              className="flex items-baseline gap-4 mb-8"
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-6 md:mb-8"
               initial="hidden"
               animate="visible"
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
@@ -126,7 +126,7 @@ export default function DemoPage() {
             </motion.div>
 
             <motion.h1
-              className="display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.88] tracking-[-0.03em] mb-6"
+              className="display text-[clamp(2rem,7.5vw,5.5rem)] leading-[0.88] tracking-[-0.03em] mb-5 md:mb-6"
               initial="hidden"
               animate="visible"
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.03 } } }}
@@ -150,7 +150,7 @@ export default function DemoPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-[1400px] px-6 py-10 flex flex-col gap-12">
+        <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-6 md:py-10 flex flex-col gap-10 md:gap-12">
 
           <motion.section
             initial="hidden"
@@ -159,7 +159,7 @@ export default function DemoPage() {
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
           >
             <motion.div className="flex items-center gap-4 mb-5" variants={fadeUpVariants}>
-              <motion.span className="display text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
+              <motion.span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
                 01
               </motion.span>
               <div>
@@ -179,7 +179,7 @@ export default function DemoPage() {
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
           >
             <motion.div className="flex items-center gap-4 mb-5" variants={fadeUpVariants}>
-              <motion.span className="display text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
+              <motion.span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums" variants={sectionNumVariants}>
                 02
               </motion.span>
               <div>
@@ -213,7 +213,7 @@ export default function DemoPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
               >
-                <span className="display text-4xl text-(--muted) leading-none tabular-nums">03</span>
+                <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">03</span>
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">V4 Execution Lifecycle</p>
                   <p className="text-xs text-(--muted) mt-0.5">Step-by-step callback trace — green = FIRED · muted = SKIP · orange = BUFFERED / PENDING</p>
@@ -251,7 +251,7 @@ export default function DemoPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.45, ease: "easeOut", delay: 0.1 }}
               >
-                <span className="display text-4xl text-(--muted) leading-none tabular-nums">04</span>
+                <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">04</span>
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">Result</p>
                   <p className="text-xs text-(--muted) mt-0.5">Computed amounts · hook outcome · plain-English explanation</p>
