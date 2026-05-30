@@ -217,7 +217,7 @@ export default function LandingPage() {
               {HOOK_ORDER.map((name) => {
                 const addr = HOOK_ADDRESSES[name as keyof typeof HOOK_ADDRESSES]
                 if (!addr) return null
-                return <HookRow key={name} address={addr} />
+                return <HookRow key={name} name={name} address={addr} />
               })}
             </div>
           </div>
