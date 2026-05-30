@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer"
 import { AddressBlock } from "@/components/address-block"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { KineticChars, KineticContainer } from "@/components/kinetic-text"
 import {
   HOOK_ORDER,
   HOOK_ADDRESSES,
@@ -79,14 +80,17 @@ export default function DashboardPage() {
 
       <main className="flex-1 bg-(--surface-0)">
 
-        {/* ── Section header strip ── */}
+        {/* Section header strip */}
         <div className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-10 grid grid-cols-12 gap-6 items-end">
+          <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-6 md:py-10 grid grid-cols-12 gap-5 md:gap-6 items-end">
             <div className="col-span-12 md:col-span-7">
               <div className="eyebrow mb-3">Section / Dashboard</div>
-              <h1 className="display text-5xl md:text-6xl leading-[0.95]">
-                Live <span className="display-italic">terminal.</span>
-              </h1>
+              <KineticContainer staggerChildren={0.03}>
+                <h1 className="display text-4xl sm:text-5xl md:text-6xl leading-[0.95]">
+                  <KineticChars text="Live " />
+                  <KineticChars text="terminal." className="display-italic" baseDelay={5} />
+                </h1>
+              </KineticContainer>
               <p className="mt-3 max-w-xl text-sm text-(--ink-2)">
                 Live on-chain state read directly from the HookRegistry on{" "}
                 <span className="mono text-(--ink)">X Layer</span>.{" "}
@@ -106,7 +110,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── KPI row ── */}
+        {/* KPI row */}
         <section className="border-b border-(--rule)">
           <div className="mx-auto max-w-[1400px] grid grid-cols-2 md:grid-cols-4">
             <Kpi
@@ -137,9 +141,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── Hook grid ── */}
+        {/* Hook grid */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-12">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12">
             <div className="flex items-end justify-between mb-6">
               <div>
                 <div className="eyebrow mb-2">Hooks</div>
@@ -159,7 +163,6 @@ export default function DashboardPage() {
                 const live = hooks.find((h) => h.name === name)
                 return <HookCell key={name} name={name} address={addr} info={live} />
               })}
-              {/* 6th cell — registry summary */}
               <Link
                 href="/contracts"
                 className="group bg-(--surface-1) p-6 hover:bg-(--surface-2) transition-colors flex flex-col gap-5"
@@ -187,9 +190,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── V4 Pools ── */}
+        {/* V4 Pools */}
         <section className="border-b border-(--rule)">
-          <div className="mx-auto max-w-[1400px] px-6 py-12">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12">
             <div className="flex items-end justify-between mb-6">
               <div>
                 <div className="eyebrow mb-2">V4 Pools</div>
@@ -200,15 +203,13 @@ export default function DashboardPage() {
               </Badge>
             </div>
 
-            {/* Token rail */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
               <TokenCell symbol="XHKB" name="X Hooks Token B" address={POOL_TOKENS.token0} role="token0" />
               <TokenCell symbol="XHKA" name="X Hooks Token A" address={POOL_TOKENS.token1} role="token1" />
             </div>
 
-            {/* Pool table */}
             <div className="border border-(--rule)">
-              <div className="grid grid-cols-12 px-5 py-3 border-b border-(--rule) bg-(--surface-1) text-[10px] uppercase tracking-[0.16em] text-(--muted) font-mono">
+              <div className="hidden md:grid grid-cols-12 px-5 py-3 border-b border-(--rule) bg-(--surface-1) text-[10px] uppercase tracking-[0.16em] text-(--muted) font-mono">
                 <div className="col-span-3">Hook</div>
                 <div className="col-span-4">Hook Address</div>
                 <div className="col-span-2">Type</div>
@@ -224,25 +225,31 @@ export default function DashboardPage() {
                   <Link
                     key={name}
                     href={`/hooks/${name.toLowerCase()}`}
-                    className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
+                    className="flex flex-col gap-2 md:grid md:grid-cols-12 md:items-center md:gap-0 px-4 py-3.5 md:px-5 border-b border-(--rule) last:border-b-0 hover:bg-(--surface-1) transition-colors"
                   >
-                    <div className="col-span-3 flex items-center gap-3 min-w-0">
+                    <div className="md:col-span-3 flex items-center gap-3 min-w-0">
                       <Icon className="h-3.5 w-3.5 text-(--signal) shrink-0" strokeWidth={1.5} />
                       <span className="font-medium text-(--ink)">{id.shortname}</span>
                       <span className="font-mono text-[10px] text-(--muted) uppercase tracking-[0.14em]">
                         {id.ordinal}
                       </span>
+                      <span className="md:hidden ml-auto">
+                        <ArrowUpRight className="h-4 w-4 text-(--muted)" />
+                      </span>
                     </div>
-                    <div className="col-span-4">
+                    <div className="md:col-span-4">
                       <AddressBlock address={addr} truncate />
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2 flex items-center gap-2 flex-wrap">
                       <Badge variant="outline">{id.type}</Badge>
+                      <span className="md:hidden font-mono text-xs text-(--ink-2)">
+                        XHKB / XHKA
+                      </span>
                     </div>
-                    <div className="col-span-2 font-mono text-xs text-(--ink-2)">
+                    <div className="hidden md:block md:col-span-2 font-mono text-xs text-(--ink-2)">
                       XHKB / XHKA
                     </div>
-                    <div className="col-span-1 flex justify-end">
+                    <div className="hidden md:flex md:col-span-1 justify-end">
                       <ArrowUpRight className="h-4 w-4 text-(--muted) group-hover:text-(--ink)" />
                     </div>
                   </Link>
@@ -252,9 +259,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── Network ── */}
+        {/* Network */}
         <section>
-          <div className="mx-auto max-w-[1400px] px-6 py-12 grid grid-cols-12 gap-8">
+          <div className="mx-auto max-w-[1400px] px-4 py-10 md:px-6 md:py-12 grid grid-cols-12 gap-6 md:gap-8">
             <div className="col-span-12 md:col-span-3">
               <div className="eyebrow mb-2">Network</div>
               <h2 className="display text-3xl md:text-4xl">X Layer Mainnet</h2>
@@ -278,8 +285,6 @@ export default function DashboardPage() {
   )
 }
 
-/* ──────────────────────────────────────────────────────────────────────── */
-
 function Kpi({
   label,
   value,
@@ -294,12 +299,12 @@ function Kpi({
   last?: boolean
 }) {
   return (
-    <div className={`px-6 py-7 ${last ? "" : "md:border-r"} border-(--rule) border-b md:border-b-0`}>
+    <div className={`px-5 py-5 md:px-6 md:py-7 ${last ? "" : "md:border-r"} border-(--rule) border-b md:border-b-0`}>
       <div className="flex items-center gap-2 mb-3 text-(--muted)">
         <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
         <span className="eyebrow">{label}</span>
       </div>
-      <div className="display text-4xl md:text-5xl text-(--ink) leading-none">{value}</div>
+      <div className="display text-3xl sm:text-4xl md:text-5xl text-(--ink) leading-none">{value}</div>
       {sub && <div className="mt-2 font-mono text-[11px] text-(--muted)">{sub}</div>}
     </div>
   )
@@ -323,7 +328,6 @@ function HookCell({
       href={`/hooks/${name.toLowerCase()}`}
       className="group bg-(--surface-0) p-6 hover:bg-(--surface-1) transition-colors flex flex-col gap-5"
     >
-      {/* Top row */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-(--signal)" strokeWidth={1.5} />
@@ -334,13 +338,11 @@ function HookCell({
         <ArrowUpRight className="h-4 w-4 text-(--muted) transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-(--ink)" />
       </div>
 
-      {/* Title */}
       <div>
         <div className="display text-2xl">{shortname}</div>
         <div className="text-sm text-(--ink-2) mt-1 leading-snug">{headline}</div>
       </div>
 
-      {/* Permissions */}
       <div className="flex flex-wrap gap-1">
         {permissions.map((p) => (
           <span
@@ -354,7 +356,6 @@ function HookCell({
 
       <Separator />
 
-      {/* Live stats */}
       <div className="grid grid-cols-3 gap-3">
         <Stat tiny label="Pools" value={info ? info.totalPoolsUsing.toString() : "—"} />
         <Stat tiny label="Calls" value={info ? fmtNumber(info.totalInteractions) : "—"} />
@@ -365,7 +366,6 @@ function HookCell({
         />
       </div>
 
-      {/* Address + verified */}
       <div className="flex items-center justify-between">
         <AddressBlock address={address} truncate />
         {info?.isVerified && (
