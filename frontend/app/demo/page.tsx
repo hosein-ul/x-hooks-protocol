@@ -95,7 +95,8 @@ export default function DemoPage() {
   async function handleSimulate() {
     setRunning(true)
     setResult(null)
-    await new Promise((r) => setTimeout(r, 600))
+    // Realistic "broadcast → mempool → block inclusion" delay
+    await new Promise((r) => setTimeout(r, 1800))
     const res = simulateSwap(selectedHook, Number(amount), direction)
     setResult(res)
     setRunning(false)
@@ -192,7 +193,7 @@ export default function DemoPage() {
                 </p>
               </div>
             </motion.div>
-            <motion.div className="max-w-lg" variants={fadeUpVariants}>
+            <motion.div className="max-w-lg mx-auto" variants={fadeUpVariants}>
               <SwapForm
                 hookName={selectedHook}
                 amount={amount}
@@ -261,6 +262,112 @@ export default function DemoPage() {
             </section>
           )}
 
+          {/* How to use these hooks (integration guide) */}
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            <div className="flex items-center gap-4 mb-5">
+              <span className="display text-3xl md:text-4xl text-(--muted) leading-none tabular-nums">05</span>
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-(--ink)">How to use these hooks</p>
+                <p className="text-xs text-(--muted) mt-0.5">Real-world integration — how a user, router, or contract actually calls a V4 pool with a hook attached</p>
+              </div>
+            </div>
+
+            <div className="border border-(--rule) bg-(--surface-0) p-5 md:p-6 mb-4">
+              <p className="text-sm text-(--ink-2) leading-relaxed">
+                Every pool here is a <span className="mono text-(--ink)">standard Uniswap V4 pool</span>{" "}
+                — same <span className="mono text-(--ink)">PoolKey</span>, same{" "}
+                <span className="mono text-(--ink)">PoolManager.swap()</span> entrypoint, same{" "}
+                <span className="mono text-(--ink)">sync → settle → take</span> settlement.
+                The only difference is the <span className="mono text-(--ink)">hooks</span> field of
+                the PoolKey points at one of our five contracts. Routers, aggregators, and wallets
+                that already speak V4 work out of the box — no SDK change required.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-(--rule) border border-(--rule)">
+              <UsageCard
+                title="Through Uniswap UniversalRouter"
+                kind="Wallet user"
+                body="From a Uniswap-compatible UI or a wallet that routes through V4: just pick our pool. The router builds the PoolKey including our hook address; PoolManager.swap() fires our beforeSwap/afterSwap automatically. No extra approvals, no special calldata for OFA/BCS/SUBA/CAL."
+                code={`// Standard V4 UniversalRouter call — no hook-specific code
+router.execute(
+  abi.encodePacked(uint8(Commands.V4_SWAP)),
+  [abi.encode(poolKey, swapParams, hookData)],
+  deadline
+)`}
+              />
+              <UsageCard
+                title="Direct PoolManager.swap()"
+                kind="Smart contract"
+                body="From a contract, lock the manager, swap, then settle. For pools whose hook needs extra context (PLT tranche, BCS counterparty), pass it via hookData."
+                code={`poolManager.unlock(abi.encode(
+  PoolKey({ currency0, currency1, fee: 3000,
+    tickSpacing: 60, hooks: IHooks(OFAHook) }),
+  SwapParams({ zeroForOne: true,
+    amountSpecified: -1e18,
+    sqrtPriceLimitX96: MIN_SQRT_RATIO + 1 }),
+  "" /* hookData */
+));`}
+              />
+              <UsageCard
+                title="PLT — pick your tranche on deposit"
+                kind="LP"
+                body="Senior LPs (fee priority, IL absorbed last) and Junior LPs (residual fees, IL first) live in the same pool. The tranche is encoded in hookData on every modifyLiquidity call — no separate vault, no oracle."
+                code={`bytes memory hookData = abi.encode(
+  msg.sender,
+  PLTHook.Tranche.SENIOR  // or JUNIOR
+);
+posManager.modifyLiquidities(
+  abi.encode(params, hookData),
+  deadline
+);`}
+              />
+              <UsageCard
+                title="CAL — post an on-chain limit order"
+                kind="Trader"
+                body="Lock collateral with a directional trigger and an expiry block. The hook executes your order atomically inside the next swap that crosses the trigger — no keeper, no off-chain orderbook, anyone can ride the trigger."
+                code={`calHook.submitCommitment(
+  poolKey,
+  CALHook.Direction.BUY,
+  triggerSqrtPriceX96,
+  expiryBlock,
+  collateralAmount
+);`}
+              />
+              <UsageCard
+                title="BCS — bilateral OTC commitment"
+                kind="Two counterparties"
+                body="Two parties register a commitment at a trigger price. The hook watches every swap; the first one that crosses the trigger settles both legs atomically against ERC-20 safeTransfer — no escrow contract, no governance."
+                code={`bcsHook.submitCommitment(
+  poolKey,
+  counterparty,
+  triggerSqrtPriceX96,
+  token0Amount,
+  token1Amount
+);`}
+              />
+              <UsageCard
+                title="SUBA — wait for the epoch clearing"
+                kind="Wallet user / keeper"
+                body="Submit a swap as normal. The hook buffers it as an ERC-6909 claim against PoolManager. At epoch boundary the designated keeper publishes a uniform clearing price and every buffered order in the batch settles at that one price."
+                code={`// Users — submit a normal swap, automatically buffered
+poolManager.swap(poolKey, params, "");
+
+// Keeper — publish clearing price at epoch end
+subaHook.settleEpoch(
+  poolKey,
+  clearingSqrtPriceX96,
+  epochId
+);`}
+              />
+            </div>
+          </motion.section>
+
           <motion.div
             className="border border-(--rule) bg-(--surface-1) px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4"
             initial={{ opacity: 0, y: 16 }}
@@ -286,6 +393,33 @@ export default function DemoPage() {
       </main>
 
       <SiteFooter />
+    </div>
+  )
+}
+
+function UsageCard({
+  title,
+  kind,
+  body,
+  code,
+}: {
+  title: string
+  kind: string
+  body: string
+  code: string
+}) {
+  return (
+    <div className="bg-(--surface-0) p-5 md:p-6 flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <h3 className="display text-xl md:text-2xl text-(--ink) leading-tight">{title}</h3>
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-(--muted) shrink-0">
+          {kind}
+        </span>
+      </div>
+      <p className="text-sm leading-relaxed text-(--ink-2)">{body}</p>
+      <pre className="overflow-x-auto bg-(--surface-1) border border-(--rule) p-3 text-[11.5px] leading-relaxed mono text-(--ink) mt-1">
+        <code>{code}</code>
+      </pre>
     </div>
   )
 }
