@@ -19,8 +19,17 @@ type Props = {
 }
 
 const TOKEN = { zero: "XHKB", one: "XHKA" }
+const RESERVE = 10_000
+// SUBA always buffers, OFA buffers above threshold — show note instead of estimate
+const OFA_THRESHOLD = 50
+
+function previewOut(amountIn: number): number {
+  const withFee = amountIn * 9970
+  return (withFee * RESERVE) / (RESERVE * 10000 + withFee)
+}
 
 export function SwapForm({
+  hookName,
   amount,
   direction,
   running,
@@ -30,6 +39,18 @@ export function SwapForm({
 }: Props) {
   const tokenIn  = direction === "zeroForOne" ? TOKEN.zero : TOKEN.one
   const tokenOut = direction === "zeroForOne" ? TOKEN.one  : TOKEN.zero
+
+  const amountNum = Number(amount)
+  const validAmount = amount !== "" && Number.isFinite(amountNum) && amountNum > 0
+  const willBuffer =
+    hookName === "SUBAHook" ||
+    (hookName === "OFAHook" && validAmount && amountNum >= OFA_THRESHOLD)
+  const estimate = validAmount ? previewOut(amountNum) : null
+  const estimateLabel = !validAmount
+    ? "—"
+    : willBuffer
+      ? "pending"
+      : estimate!.toFixed(4)
 
   return (
     <motion.div
@@ -87,7 +108,21 @@ export function SwapForm({
       <div className="flex flex-col gap-1.5">
         <label className="eyebrow text-(--muted)">To (estimated)</label>
         <div className="flex items-center gap-3 border border-(--rule) bg-(--surface-0)/50 px-4 py-3">
-          <span className="flex-1 font-mono text-xl text-(--muted)">—</span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={estimateLabel}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className={cn(
+                "flex-1 font-mono text-xl tabular-nums",
+                validAmount && !willBuffer ? "text-(--ink)" : "text-(--muted)",
+              )}
+            >
+              {estimateLabel}
+            </motion.span>
+          </AnimatePresence>
           <AnimatePresence mode="wait">
             <motion.span
               key={tokenOut}
@@ -101,6 +136,13 @@ export function SwapForm({
             </motion.span>
           </AnimatePresence>
         </div>
+        {willBuffer && (
+          <p className="font-mono text-[10px] text-(--signal) uppercase tracking-[0.14em]">
+            {hookName === "SUBAHook"
+              ? "Buffered — settled at epoch clearing price"
+              : `Auction triggered (≥ ${OFA_THRESHOLD} ${tokenIn}) — solver-filled, price ≥ AMM`}
+          </p>
+        )}
       </div>
 
       {/* Pool info row */}

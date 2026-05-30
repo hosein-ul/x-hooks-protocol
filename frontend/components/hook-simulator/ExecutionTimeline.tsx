@@ -29,9 +29,12 @@ const statusGlow: Record<StepStatus, string> = {
   PENDING:  "shadow-[0_0_8px_rgba(255,140,0,0.15)]",
 }
 
+// Per-step delay between cards (s). Higher = more deliberate, realistic feel.
+const STEP_DELAY = 0.55
+
 const containerV: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.2 } },
+  visible: { transition: { staggerChildren: STEP_DELAY } },
 }
 
 const cardV: Variants = {
@@ -40,7 +43,7 @@ const cardV: Variants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] },
   },
 }
 
@@ -52,7 +55,7 @@ function KineticLabel({ text }: { text: string }) {
           key={i}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.02 }}
+          transition={{ duration: 0.45, ease: "easeOut", delay: i * 0.04 }}
           className="inline-block"
           style={{ whiteSpace: char === " " ? "pre" : undefined }}
         >
@@ -120,7 +123,7 @@ export function ExecutionTimeline({ steps }: Props) {
               className="hidden md:block absolute -right-[7px] top-1/2 -translate-y-1/2 z-10 w-3.5 h-3.5 border-t border-r border-(--rule) bg-(--surface-0) rotate-45"
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.2 + 0.3, duration: 0.3, ease: "backOut" }}
+              transition={{ delay: i * STEP_DELAY + 0.5, duration: 0.45, ease: "backOut" }}
             />
           )}
 
@@ -130,7 +133,7 @@ export function ExecutionTimeline({ steps }: Props) {
                 className="font-mono text-[10px] text-(--muted) uppercase tracking-[0.18em] tabular-nums"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.2 + 0.1 }}
+                transition={{ delay: i * STEP_DELAY + 0.2, duration: 0.5 }}
               >
                 {String(i + 1).padStart(2, "0")}
               </motion.span>
@@ -145,7 +148,7 @@ export function ExecutionTimeline({ steps }: Props) {
                 className="text-[11px] text-(--muted) mt-0.5"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.2 + 0.25 }}
+                transition={{ delay: i * STEP_DELAY + 0.4, duration: 0.5 }}
               >
                 {step.sublabel}
               </motion.p>
@@ -158,7 +161,7 @@ export function ExecutionTimeline({ steps }: Props) {
                 className="text-[11px] text-(--ink-2) leading-snug border-t border-(--rule) pt-3 mt-auto"
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.2 + 0.4 }}
+                transition={{ delay: i * STEP_DELAY + 0.65, duration: 0.5 }}
               >
                 {step.note}
               </motion.p>
